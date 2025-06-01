@@ -51,6 +51,8 @@ class _MyHomePageState extends State<MyHomePage> with SignalsMixin {
 
   @override
   Widget build(BuildContext context) {
+    double screenWidth = MediaQuery.of(context).size.width;
+
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
@@ -105,6 +107,28 @@ class _MyHomePageState extends State<MyHomePage> with SignalsMixin {
                 ),
               ),
             ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                Container(
+                  padding: EdgeInsets.fromLTRB(2, 6, 6, 6),
+                  margin: EdgeInsets.only(bottom: 4),
+                  height: 80.0,
+                  width: screenWidth * 0.8,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: Card(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        spacing: 6,
+                        children: [
+                          SizedBox(
+                            width: screenWidth * 0.25,
+                            height: 40,
+                            child: IconButton(
+                              tooltip: "Max Drowdown",
+                              color: Colors.deepPurpleAccent,
+                              icon: Icon(Icons.heart_broken),
                               onPressed: () => _displayTextInputDialog(
                                 context,
                                 'Max Drowdown',
@@ -112,6 +136,15 @@ class _MyHomePageState extends State<MyHomePage> with SignalsMixin {
                                 textMDController,
                                 _textMDSignal,
                               ),
+                            ),
+                          ),
+                          SizedBox(
+                            width: screenWidth * 0.25,
+                            height: 40,
+                            child: IconButton(
+                              tooltip: "% loss/trade",
+                              color: Colors.deepPurpleAccent,
+                              icon: Icon(Icons.percent),
                               onPressed: () => _displayTextInputDialog(
                                 context,
                                 '% Loss Per Trade',
@@ -119,6 +152,35 @@ class _MyHomePageState extends State<MyHomePage> with SignalsMixin {
                                 textLTController,
                                 _textLTSignal,
                               ),
+                            ),
+                          ),
+                          SizedBox(
+                            width: screenWidth * 0.2,
+                            height: 36,
+                            child: Tooltip(
+                              message: "Max Loss Per Trade",
+                              child: Text(
+                                '120',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 24,
+                                  color: Colors.redAccent,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                Card(
+                  color: Colors.grey.shade900,
+                  child: SizedBox(
+                    child: IconButton(
+                      tooltip: "Add new trade",
+                      color: Colors.deepPurpleAccent,
+                      icon: Icon(Icons.add),
                       onPressed: () => _displayTextInputDialog(
                         context,
                         'Trade Result',
@@ -126,12 +188,13 @@ class _MyHomePageState extends State<MyHomePage> with SignalsMixin {
                         textATController,
                         _textATSignal,
                       ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => (),
-        child: Icon(Icons.add),
       ),
     );
   }
