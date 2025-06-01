@@ -42,6 +42,12 @@ class _MyHomePageState extends State<MyHomePage> with SignalsMixin {
   }
 
   late final _tradeData = createListSignal(_generateTradeData());
+  final textMDController = TextEditingController();
+  final textLTController = TextEditingController();
+  final textATController = TextEditingController();
+  final _textMDSignal = Signal<String>('');
+  final _textLTSignal = Signal<String>('');
+  final _textATSignal = Signal<String>('');
 
   @override
   Widget build(BuildContext context) {
@@ -99,6 +105,27 @@ class _MyHomePageState extends State<MyHomePage> with SignalsMixin {
                 ),
               ),
             ),
+                              onPressed: () => _displayTextInputDialog(
+                                context,
+                                'Max Drowdown',
+                                'Put here max value',
+                                textMDController,
+                                _textMDSignal,
+                              ),
+                              onPressed: () => _displayTextInputDialog(
+                                context,
+                                '% Loss Per Trade',
+                                'Put % value here',
+                                textLTController,
+                                _textLTSignal,
+                              ),
+                      onPressed: () => _displayTextInputDialog(
+                        context,
+                        'Trade Result',
+                        'Put result here',
+                        textATController,
+                        _textATSignal,
+                      ),
           ],
         ),
       ),
@@ -120,5 +147,44 @@ class _MyHomePageState extends State<MyHomePage> with SignalsMixin {
         color: Colors.deepPurpleAccent,
       ),
     ];
+  }
+
+  Future<void> _displayTextInputDialog(
+    BuildContext context,
+    String title,
+    hint,
+    TextEditingController tc,
+    Signal ts,
+  ) async {
+    return showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(title),
+          content: TextField(
+            controller: tc,
+            decoration: InputDecoration(hintText: hint),
+          ),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.pop(context, 'Cancel'),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                if (title == 'Trade Result') {
+                  var v = double.parse(tc.text);
+                  _tradeData.add(_Trade(ntrade++, v));
+                }
+                ts.set(tc.text);
+                debugPrint(ts.value);
+                Navigator.pop(context, 'OK');
+              },
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
   }
 }
