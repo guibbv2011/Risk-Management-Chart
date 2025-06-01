@@ -1,16 +1,10 @@
 # risk_managment
 
-A new Flutter project.
+This project is made for traders that need track your balance with calculus of risk account, only need that the user put your max drowdown e.g: -1500, your percent of loss for trade e.g: 5, and done, the sistem show you what amount you can loose per trade and still waiting for trades data input.
 
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+TODO:
+  - [ ] - Add data dinamically, from Floating Action Button, that open a text input.
+  - [ ] - Zoom-in / Zoom-out in X and Y axis.
+  - [ ] - Select Range to view.
+  - [ ] - Store data on local disk if user do not have account.
+  - [ ] - Create a login to store data in a clound.
