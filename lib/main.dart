@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:signals/signals_flutter.dart';
-import 'package:syncfusion_flutter_charts/charts.dart';
+import 'model/risk_management.dart';
+import 'model/repository/trade_repository.dart';
+import 'model/service/risk_management_service.dart';
+import 'view_model/risk_management_view_model.dart';
+import 'view/home_view.dart';
 
 void main() {
   runApp(const MyApp());
@@ -14,111 +17,60 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       themeMode: ThemeMode.system,
-      title: 'Risk Managment',
+      title: 'Risk Management',
       color: Colors.black,
       theme: ThemeData(brightness: Brightness.dark),
-      home: const MyHomePage(title: 'Risk Managment App'),
+      home: const RiskManagementScreen(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-  final String title;
+class RiskManagementScreen extends StatefulWidget {
+  const RiskManagementScreen({super.key});
+
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<RiskManagementScreen> createState() => _RiskManagementScreenState();
 }
 
-class _Trade {
-  _Trade(this.x, this.y);
-  final int? x;
-  final double? y;
-}
+class _RiskManagementScreenState extends State<RiskManagementScreen> {
+  late final RiskManagementViewModel _viewModel;
 
-class _MyHomePageState extends State<MyHomePage> with SignalsMixin {
-  int ntrade = 0;
-  List<_Trade> _generateTradeData() {
-    return <_Trade>[_Trade(ntrade++, 0)];
+  @override
+  void initState() {
+    super.initState();
+    _initializeViewModel();
   }
 
-  late final _tradeData = createListSignal(_generateTradeData());
+  void _initializeViewModel() {
+    // Initialize repository
+    final tradeRepository = InMemoryTradeRepository();
+
+    // Initialize risk settings with default values
+    final riskSettings = RiskManagement(
+      maxDrawdown: 1000.0, // $1,000 max drawdown (absolute amount)
+      lossPerTradePercentage: 5.0, // 5% risk per trade (of max drawdown)
+      accountBalance: 10000.0, // $10,000 default account balance
+      currentBalance: 10000.0, // Start with full balance
+    );
+
+    // Initialize service
+    final riskService = RiskManagementService(
+      tradeRepository: tradeRepository,
+      riskSettings: riskSettings,
+    );
+
+    // Initialize view model
+    _viewModel = RiskManagementViewModel(riskService: riskService);
+  }
+
+  @override
+  void dispose() {
+    _viewModel.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
-        backgroundColor: Colors.black,
-        foregroundColor: Colors.deepPurpleAccent,
-        title: Text(widget.title),
-      ),
-      body: Center(
-        heightFactor: double.maxFinite,
-        widthFactor: double.maxFinite,
-        child: Column(
-          mainAxisSize: MainAxisSize.max,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Expanded(
-              child: SfCartesianChart(
-                backgroundColor: Colors.black,
-                trackballBehavior: TrackballBehavior(
-                  enable: true,
-                  tooltipDisplayMode: TrackballDisplayMode.floatAllPoints,
-                  lineColor: Colors.grey,
-                  markerSettings: TrackballMarkerSettings(
-                    borderColor: Colors.amber,
-                    borderWidth: 2.0,
-                    color: Colors.black,
-                    height: 2.0,
-                    width: 2.0,
-                    shape: DataMarkerType.circle,
-                    markerVisibility: TrackballVisibilityMode.visible,
-                  ),
-                ),
-                plotAreaBorderWidth: 1,
-                primaryXAxis: const CategoryAxis(
-                  majorGridLines: MajorGridLines(width: 0),
-                  labelPlacement: LabelPlacement.onTicks,
-                ),
-                primaryYAxis: const NumericAxis(
-                  axisLine: AxisLine(width: 0),
-                  enableAutoIntervalOnZooming: true,
-                  edgeLabelPlacement: EdgeLabelPlacement.shift,
-                  labelFormat: '{value}',
-                  majorTickLines: MajorTickLines(size: 0),
-                ),
-                series: _buildTradeDataSeries(),
-                tooltipBehavior: TooltipBehavior(
-                  enable: true,
-                  canShowMarker: true,
-                  color: Colors.black,
-                  textStyle: TextStyle(color: Colors.white),
-                  borderColor: Colors.grey,
-                  header: "",
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => (),
-        child: Icon(Icons.add),
-      ),
-    );
-  }
-
-  List<SplineSeries<_Trade, int>> _buildTradeDataSeries() {
-    return [
-      SplineSeries<_Trade, int>(
-        enableTrackball: true,
-        dataSource: _tradeData,
-        xValueMapper: (_Trade data, int index) => data.x,
-        yValueMapper: (_Trade data, int index) => data.y,
-        markerSettings: const MarkerSettings(isVisible: true),
-        color: Colors.deepPurpleAccent,
-      ),
-    ];
+    return HomeView(viewModel: _viewModel);
   }
 }
