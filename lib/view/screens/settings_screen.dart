@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:signals/signals_flutter.dart';
 import '../../view_model/risk_management_view_model.dart';
 import '../../model/storage/app_storage.dart';
@@ -776,20 +777,71 @@ class _SettingsScreenState extends State<SettingsScreen> with SignalsMixin {
     });
 
     try {
+      // Get comprehensive data check
+      final startupData = await SimplePersistenceFix.checkStartupData();
       final status = await SimplePersistenceFix.getStorageStatus();
+
+      final combinedReport = StringBuffer();
+      combinedReport.writeln('=== COMPREHENSIVE DATA CHECK ===');
+      combinedReport.writeln('Platform: ${startupData['platform']}');
+      combinedReport.writeln('Has Any Data: ${startupData['hasAnyData']}');
+      combinedReport.writeln('Check Time: ${startupData['timestamp']}');
+      combinedReport.writeln('\n=== STORAGE SOURCES ===');
+
+      final sources = startupData['sources'] as Map<String, dynamic>;
+      for (final entry in sources.entries) {
+        combinedReport.writeln('${entry.key.toUpperCase()}:');
+        final source = entry.value as Map<String, dynamic>;
+        if (source['available'] == true) {
+          combinedReport.writeln('  Available: YES');
+          if (source['hasRiskSettings'] == true) {
+            combinedReport.writeln('  Risk Settings: FOUND');
+          }
+          if (source['hasBackup'] == true) {
+            combinedReport.writeln('  Backup Data: FOUND');
+          }
+          if (source['hasData'] == true) {
+            combinedReport.writeln('  Web Data: FOUND');
+          }
+          if (source['totalKeys'] != null) {
+            combinedReport.writeln('  Total Keys: ${source['totalKeys']}');
+          }
+        } else {
+          combinedReport.writeln('  Available: NO');
+          if (source['error'] != null) {
+            combinedReport.writeln('  Error: ${source['error']}');
+          }
+        }
+        combinedReport.writeln('');
+      }
+
+      combinedReport.writeln('\n$status');
 
       if (mounted) {
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
             title: const Text('Storage Status'),
-            content: SingleChildScrollView(
-              child: Text(
-                status,
-                style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+            content: SizedBox(
+              width: double.maxFinite,
+              height: 400,
+              child: SingleChildScrollView(
+                child: Text(
+                  combinedReport.toString(),
+                  style: const TextStyle(fontFamily: 'monospace', fontSize: 10),
+                ),
               ),
             ),
             actions: [
+              TextButton(
+                onPressed: () {
+                  Clipboard.setData(ClipboardData(text: combinedReport.toString()));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Report copied to clipboard')),
+                  );
+                },
+                child: const Text('Copy'),
+              ),
               TextButton(
                 onPressed: () => Navigator.of(context).pop(),
                 child: const Text('Close'),

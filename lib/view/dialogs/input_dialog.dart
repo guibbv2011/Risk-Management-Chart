@@ -5,7 +5,7 @@ import '../../view_model/dialog_view_model.dart';
 
 class InputDialog extends StatefulWidget {
   final DialogViewModel viewModel;
-  final Future<void> Function(String, [bool?]) onConfirm;
+  final Future<void> Function(String, String?, [bool?]) onConfirm;
 
   const InputDialog({
     super.key,
@@ -19,18 +19,23 @@ class InputDialog extends StatefulWidget {
 
 class _InputDialogState extends State<InputDialog> with SignalsMixin {
   late final TextEditingController _controller;
+  late final TextEditingController _accountBalanceController;
   bool _isProcessing = false;
 
   @override
   void initState() {
     super.initState();
     _controller = TextEditingController();
+    _accountBalanceController = TextEditingController();
     _controller.text = widget.viewModel.dialogInputValue.value;
+    _accountBalanceController.text =
+        widget.viewModel.dialogAccountBalanceValue.value;
   }
 
   @override
   void dispose() {
     _controller.dispose();
+    _accountBalanceController.dispose();
     super.dispose();
   }
 
@@ -69,6 +74,80 @@ class _InputDialogState extends State<InputDialog> with SignalsMixin {
             );
           }),
           const SizedBox(height: 16),
+
+          // Account Balance field (only for Max Drawdown dialog)
+          Watch((_) {
+            if (widget.viewModel.dialogType.value == DialogType.maxDrawdown) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Account Balance',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: _accountBalanceController,
+                    enabled: !_isProcessing,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+                    ],
+                    style: const TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      hintText: 'Enter your total account balance',
+                      hintStyle: TextStyle(color: Colors.grey.shade500),
+                      filled: true,
+                      fillColor: Colors.grey.shade800,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide.none,
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(
+                          color: Colors.deepPurpleAccent,
+                          width: 2,
+                        ),
+                      ),
+                      errorBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(
+                          color: Colors.red,
+                          width: 2,
+                        ),
+                      ),
+                      focusedErrorBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: const BorderSide(
+                          color: Colors.red,
+                          width: 2,
+                        ),
+                      ),
+                      errorText:
+                          widget.viewModel.dialogAccountBalanceError.value,
+                      errorStyle: const TextStyle(color: Colors.red),
+                      prefixIcon: const Icon(
+                        Icons.account_balance_wallet,
+                        color: Colors.deepPurpleAccent,
+                      ),
+                    ),
+                    onChanged: (value) {
+                      widget.viewModel.updateAccountBalanceValue(value);
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                ],
+              );
+            }
+            return const SizedBox.shrink();
+          }),
 
           // Dynamic Max Drawdown Toggle (only for Max Drawdown dialog)
           Watch((_) {
@@ -114,7 +193,10 @@ class _InputDialogState extends State<InputDialog> with SignalsMixin {
                           ),
                         ),
                         Switch(
-                          value: widget.viewModel.isDynamicMaxDrawdownEnabled.value,
+                          value: widget
+                              .viewModel
+                              .isDynamicMaxDrawdownEnabled
+                              .value,
                           onChanged: (value) {
                             widget.viewModel.toggleDynamicMaxDrawdown(value);
                           },
@@ -132,12 +214,34 @@ class _InputDialogState extends State<InputDialog> with SignalsMixin {
             return const SizedBox.shrink();
           }),
 
+          // Max Drawdown Input field
+          Watch((_) {
+            if (widget.viewModel.dialogType.value == DialogType.maxDrawdown) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Maximum Drawdown',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                ],
+              );
+            }
+            return const SizedBox.shrink();
+          }),
+
           // Input field
           Watch((_) {
             return TextField(
               controller: _controller,
               enabled: !_isProcessing,
-              autofocus: true,
+              autofocus:
+                  widget.viewModel.dialogType.value != DialogType.maxDrawdown,
               keyboardType: _getKeyboardType(),
               inputFormatters: _getInputFormatters(),
               style: const TextStyle(color: Colors.white),
@@ -266,7 +370,7 @@ class _InputDialogState extends State<InputDialog> with SignalsMixin {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'Maximum dollar amount that can be lost from your account',
+                  'Set your account balance and maximum drawdown amount',
                   style: TextStyle(color: Colors.blue.shade300, fontSize: 11),
                 ),
               ),
@@ -333,11 +437,16 @@ class _InputDialogState extends State<InputDialog> with SignalsMixin {
     });
 
     try {
-      // For Max Drawdown dialog, also pass the toggle state
+      // For Max Drawdown dialog, also pass the account balance and toggle state
       if (widget.viewModel.dialogType.value == DialogType.maxDrawdown) {
-        await widget.onConfirm(inputValue, widget.viewModel.isDynamicMaxDrawdownEnabled.value);
+        final accountBalance = widget.viewModel.getAccountBalanceValue();
+        await widget.onConfirm(
+          inputValue,
+          accountBalance,
+          widget.viewModel.isDynamicMaxDrawdownEnabled.value,
+        );
       } else {
-        await widget.onConfirm(inputValue);
+        await widget.onConfirm(inputValue, null);
       }
 
       if (mounted) {

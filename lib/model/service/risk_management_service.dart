@@ -32,9 +32,11 @@ class RiskManagementService {
 
     // Check if adding this trade would exceed maximum drawdown
     if (result < 0 && _riskSettings.wouldExceedMaxDrawdown(result)) {
-      final effectiveMaxDrawdown = _riskSettings.isDynamicMaxDrawdown &&
-          _riskSettings.currentBalance > _riskSettings.accountBalance
-          ? _riskSettings.maxDrawdown + (_riskSettings.currentBalance - _riskSettings.accountBalance)
+      final effectiveMaxDrawdown =
+          _riskSettings.isDynamicMaxDrawdown &&
+              _riskSettings.currentBalance > _riskSettings.accountBalance
+          ? _riskSettings.maxDrawdown +
+                (_riskSettings.currentBalance - _riskSettings.accountBalance)
           : _riskSettings.maxDrawdown;
 
       throw RiskLimitExceededException(
@@ -68,9 +70,11 @@ class RiskManagementService {
       totalTrades: trades.length,
       totalPnL: totalPnL,
       currentDrawdown: _riskSettings.currentDrawdownAmount,
-      maxAllowedDrawdown: _riskSettings.isDynamicMaxDrawdown &&
-          _riskSettings.currentBalance > _riskSettings.accountBalance
-          ? _riskSettings.maxDrawdown + (_riskSettings.currentBalance - _riskSettings.accountBalance)
+      maxAllowedDrawdown:
+          _riskSettings.isDynamicMaxDrawdown &&
+              _riskSettings.currentBalance > _riskSettings.accountBalance
+          ? _riskSettings.maxDrawdown +
+                (_riskSettings.currentBalance - _riskSettings.accountBalance)
           : _riskSettings.maxDrawdown,
       winCount: winCount,
       lossCount: lossCount,
@@ -111,7 +115,9 @@ class RiskManagementService {
   Future<void> clearAllTrades() async {
     await _tradeRepository.clearAllTrades();
     // Reset balance to initial account balance
-    _riskSettings = _riskSettings.copyWith(currentBalance: _riskSettings.accountBalance);
+    _riskSettings = _riskSettings.copyWith(
+      currentBalance: _riskSettings.accountBalance,
+    );
   }
 
   /// Get trades within a specific date range
@@ -121,11 +127,11 @@ class RiskManagementService {
 
   /// Validate risk settings
   bool validateRiskSettings(RiskManagement settings) {
-    return settings.maxDrawdown > 0 &&
+    return settings.maxDrawdown >= 0 &&
         settings.maxDrawdown <= settings.accountBalance &&
         settings.lossPerTradePercentage > 0 &&
         settings.lossPerTradePercentage <= 100 &&
-        settings.accountBalance > 0;
+        settings.accountBalance >= 0;
   }
 
   /// Initialize current balance from repository data
@@ -133,6 +139,11 @@ class RiskManagementService {
     final totalPnL = await _tradeRepository.getTotalPnL();
     final currentBalance = _riskSettings.accountBalance + totalPnL;
     _riskSettings = _riskSettings.copyWith(currentBalance: currentBalance);
+  }
+
+  /// Get total P&L from all trades
+  Future<double> getTotalPnL() async {
+    return await _tradeRepository.getTotalPnL();
   }
 }
 

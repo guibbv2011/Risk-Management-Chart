@@ -97,6 +97,10 @@ TODO:
     - [ ] - Zoom in/out on the X and Y axes.
     - [ ] - Select range for visualization.
     - [?] - Store data on the local disk if the user does not have an account.
+            - Native storage implementation [x]
+            - Mobile storage implementation [x]
+            - Web storage implementation [?]
+              - We can Import and Export data from/to Json files. But the auto loading of data from the local disk is not implemented yet.
   Paid Version:
     - [ ] - Add subscription model for premium users.
     - [ ] - Integrate payment gateway for secure transactions.
