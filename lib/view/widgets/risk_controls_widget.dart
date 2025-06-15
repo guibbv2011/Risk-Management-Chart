@@ -24,8 +24,6 @@ class _RiskControlsWidgetState extends State<RiskControlsWidget>
     with SignalsMixin {
   @override
   Widget build(BuildContext context) {
-    double screenWidth = MediaQuery.of(context).size.width;
-
     return Container(
       padding: const EdgeInsets.fromLTRB(8, 6, 8, 16),
       child: Row(

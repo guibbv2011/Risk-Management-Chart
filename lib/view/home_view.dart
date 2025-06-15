@@ -6,6 +6,7 @@ import '../model/service/risk_management_service.dart';
 import 'widgets/trade_chart_widget.dart';
 import 'widgets/risk_controls_widget.dart';
 import 'dialogs/input_dialog.dart';
+import 'screens/settings_screen.dart';
 
 class HomeView extends StatefulWidget {
   final RiskManagementViewModel viewModel;
@@ -49,6 +50,11 @@ class _HomeViewState extends State<HomeView> with SignalsMixin {
             icon: const Icon(Icons.clear_all),
             onPressed: _showClearAllDialog,
             tooltip: 'Clear All Trades',
+          ),
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: _navigateToSettings,
+            tooltip: 'Settings',
           ),
         ],
       ),
@@ -164,7 +170,8 @@ class _HomeViewState extends State<HomeView> with SignalsMixin {
 
   void _showMaxDrawdownDialog() {
     _dialogViewModel.openMaxDrawdownDialog(
-      isDynamicEnabled: widget.viewModel.riskSettings.value.isDynamicMaxDrawdown,
+      isDynamicEnabled:
+          widget.viewModel.riskSettings.value.isDynamicMaxDrawdown,
     );
     _showInputDialog(
       onConfirm: (value, [isDynamicEnabled]) async {
@@ -191,7 +198,9 @@ class _HomeViewState extends State<HomeView> with SignalsMixin {
     );
   }
 
-  void _showInputDialog({required Future<void> Function(String, [bool?]) onConfirm}) {
+  void _showInputDialog({
+    required Future<void> Function(String, [bool?]) onConfirm,
+  }) {
     showDialog(
       context: context,
       builder: (context) =>
@@ -297,6 +306,14 @@ class _HomeViewState extends State<HomeView> with SignalsMixin {
             child: const Text('Clear All'),
           ),
         ],
+      ),
+    );
+  }
+
+  void _navigateToSettings() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => SettingsScreen(viewModel: widget.viewModel),
       ),
     );
   }

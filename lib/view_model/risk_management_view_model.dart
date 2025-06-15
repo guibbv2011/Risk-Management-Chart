@@ -3,9 +3,12 @@ import 'package:signals/signals_flutter.dart';
 import '../model/trade.dart';
 import '../model/risk_management.dart';
 import '../model/service/risk_management_service.dart';
+import '../model/storage/storage_interface.dart';
+import '../services/simple_persistence_fix.dart';
 
 class RiskManagementViewModel extends ChangeNotifier {
   final RiskManagementService _riskService;
+  final ConfigStorage _configStorage;
 
   // Signals for reactive state management
   late final Signal<List<Trade>> _trades;
@@ -20,8 +23,11 @@ class RiskManagementViewModel extends ChangeNotifier {
   late final Signal<String> _lossPerTradeInput;
   late final Signal<String> _tradeResultInput;
 
-  RiskManagementViewModel({required RiskManagementService riskService})
-    : _riskService = riskService {
+  RiskManagementViewModel({
+    required RiskManagementService riskService,
+    required ConfigStorage configStorage,
+  }) : _riskService = riskService,
+       _configStorage = configStorage {
     _initializeSignals();
     _loadInitialData();
   }
@@ -78,6 +84,9 @@ class RiskManagementViewModel extends ChangeNotifier {
       _isLoading.value = true;
       _errorMessage.value = null;
 
+      // Load saved risk settings
+      await _loadSavedRiskSettings();
+
       // Initialize current balance from existing trades
       await _riskService.initializeCurrentBalance();
       await _refreshData();
@@ -100,6 +109,39 @@ class RiskManagementViewModel extends ChangeNotifier {
     _riskSettings.value = _riskService.riskSettings;
   }
 
+  /// Load saved risk settings from storage
+  Future<void> _loadSavedRiskSettings() async {
+    try {
+      final savedSettings = await _configStorage.loadRiskSettings();
+      if (savedSettings != null) {
+        // Validate loaded settings
+        if (_riskService.validateRiskSettings(savedSettings)) {
+          _riskService.updateRiskSettings(savedSettings);
+          debugPrint('Loaded saved risk settings: $savedSettings');
+        } else {
+          debugPrint('Invalid saved risk settings, using defaults');
+        }
+      }
+    } catch (e) {
+      debugPrint('Failed to load saved risk settings: $e');
+      // Continue with default settings
+    }
+  }
+
+  /// Save risk settings to storage
+  Future<void> _saveRiskSettings() async {
+    try {
+      await _configStorage.saveRiskSettings(_riskSettings.value);
+      debugPrint('Risk settings saved successfully');
+
+      // Create simple backup
+      await _createSimpleBackup();
+    } catch (e) {
+      debugPrint('Failed to save risk settings: $e');
+      // Don't throw error to avoid interrupting user workflow
+    }
+  }
+
   Future<void> addTrade(String tradeResultText) async {
     try {
       _isLoading.value = true;
@@ -112,6 +154,9 @@ class RiskManagementViewModel extends ChangeNotifier {
       // Update local risk settings to reflect the balance change
       _riskSettings.value = _riskService.riskSettings;
       await _refreshData();
+
+      // Create simple backup after adding trade
+      await _createSimpleBackup();
     } on FormatException {
       _errorMessage.value =
           'Invalid trade result format. Please enter a valid number.';
@@ -125,7 +170,10 @@ class RiskManagementViewModel extends ChangeNotifier {
     }
   }
 
-  Future<void> updateMaxDrawdown(String maxDrawdownText, [bool? isDynamicEnabled]) async {
+  Future<void> updateMaxDrawdown(
+    String maxDrawdownText, [
+    bool? isDynamicEnabled,
+  ]) async {
     try {
       _errorMessage.value = null;
 
@@ -140,13 +188,17 @@ class RiskManagementViewModel extends ChangeNotifier {
       // Preserve current balance when updating max drawdown and set dynamic toggle
       final newSettings = _riskSettings.value.copyWith(
         maxDrawdown: maxDrawdown,
-        isDynamicMaxDrawdown: isDynamicEnabled ?? _riskSettings.value.isDynamicMaxDrawdown,
+        isDynamicMaxDrawdown:
+            isDynamicEnabled ?? _riskSettings.value.isDynamicMaxDrawdown,
       );
 
       if (_riskService.validateRiskSettings(newSettings)) {
         _riskService.updateRiskSettings(newSettings);
         _riskSettings.value = newSettings;
         _maxDrawdownInput.value = '';
+
+        // Save settings to storage
+        await _saveRiskSettings();
         await _refreshData();
       } else {
         throw ArgumentError('Invalid risk settings');
@@ -180,6 +232,9 @@ class RiskManagementViewModel extends ChangeNotifier {
         _riskService.updateRiskSettings(newSettings);
         _riskSettings.value = newSettings;
         _lossPerTradeInput.value = '';
+
+        // Save settings to storage
+        await _saveRiskSettings();
         await _refreshData();
       } else {
         throw ArgumentError('Invalid risk settings');
@@ -202,6 +257,9 @@ class RiskManagementViewModel extends ChangeNotifier {
 
       await _riskService.clearAllTrades();
       await _refreshData();
+
+      // Create simple backup after clearing trades
+      await _createSimpleBackup();
     } catch (e) {
       _errorMessage.value = 'Failed to clear trades: ${e.toString()}';
       debugPrint('Error clearing trades: $e');
@@ -255,6 +313,123 @@ class RiskManagementViewModel extends ChangeNotifier {
         return 'High Risk';
       case RiskStatus.critical:
         return 'Critical Risk';
+    }
+  }
+
+  /// Reset all settings to defaults
+  Future<void> resetToDefaults() async {
+    try {
+      _isLoading.value = true;
+      _errorMessage.value = null;
+
+      // Create default settings
+      final defaultSettings = RiskManagement(
+        maxDrawdown: 1000.0,
+        lossPerTradePercentage: 5.0,
+        accountBalance: 10000.0,
+        currentBalance: 10000.0,
+        isDynamicMaxDrawdown: false,
+      );
+
+      // Update service and view model
+      _riskService.updateRiskSettings(defaultSettings);
+      _riskSettings.value = defaultSettings;
+
+      // Save to storage
+      await _saveRiskSettings();
+      await _refreshData();
+    } catch (e) {
+      _errorMessage.value = 'Failed to reset settings: ${e.toString()}';
+      debugPrint('Error resetting to defaults: $e');
+    } finally {
+      _isLoading.value = false;
+    }
+  }
+
+  /// Clear all stored data (settings and trades)
+  Future<void> clearAllStoredData() async {
+    try {
+      _isLoading.value = true;
+      _errorMessage.value = null;
+
+      // Clear trades
+      await clearAllTrades();
+
+      // Clear stored settings
+      await _configStorage.clearRiskSettings();
+
+      // Reset to defaults
+      await resetToDefaults();
+    } catch (e) {
+      _errorMessage.value = 'Failed to clear all data: ${e.toString()}';
+      debugPrint('Error clearing all stored data: $e');
+    } finally {
+      _isLoading.value = false;
+    }
+  }
+
+  /// Create simple backup of current data
+  Future<void> _createSimpleBackup() async {
+    try {
+      final trades = await _riskService.getAllTrades();
+      await SimplePersistenceFix.forceSaveData(
+        riskSettings: _riskSettings.value,
+        trades: trades,
+      );
+      debugPrint('Simple backup created successfully');
+    } catch (e) {
+      debugPrint('Failed to create simple backup: $e');
+      // Don't throw error to avoid interrupting user workflow
+    }
+  }
+
+  /// Attempt to recover data if current data is empty
+  Future<void> attemptDataRecovery() async {
+    try {
+      debugPrint('Attempting data recovery...');
+
+      final recoveredData = await SimplePersistenceFix.tryRecoverData();
+
+      if (recoveredData != null) {
+        final restored = await SimplePersistenceFix.restoreData(recoveredData);
+
+        if (restored) {
+          debugPrint('Data recovery successful, refreshing view...');
+          await _loadSavedRiskSettings();
+          await _refreshData();
+          _errorMessage.value = 'Data recovered successfully from backup';
+        } else {
+          debugPrint('Data recovery failed during restoration');
+        }
+      } else {
+        debugPrint('No recoverable data found');
+      }
+    } catch (e) {
+      debugPrint('Data recovery attempt failed: $e');
+    }
+  }
+
+  /// Force reload data from storage
+  Future<void> forceReload() async {
+    try {
+      _isLoading.value = true;
+      _errorMessage.value = null;
+
+      // Clear any cached data
+      _trades.value = [];
+      _statistics.value = null;
+
+      // Reload from storage
+      await _loadSavedRiskSettings();
+      await _riskService.initializeCurrentBalance();
+      await _refreshData();
+
+      debugPrint('Force reload completed');
+    } catch (e) {
+      _errorMessage.value = 'Failed to reload data: ${e.toString()}';
+      debugPrint('Force reload failed: $e');
+    } finally {
+      _isLoading.value = false;
     }
   }
 
