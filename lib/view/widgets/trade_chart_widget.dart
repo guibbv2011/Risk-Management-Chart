@@ -46,16 +46,16 @@ class _TradeChartWidgetState extends State<TradeChartWidget> with SignalsMixin {
           ),
           plotAreaBorderWidth: 1,
           plotAreaBorderColor: Colors.grey.shade800,
-          primaryXAxis: const CategoryAxis(
+          primaryXAxis: const NumericAxis(
             majorGridLines: MajorGridLines(
               width: 0.5,
               color: Colors.grey,
               dashArray: [2, 2],
             ),
-
-            labelPlacement: LabelPlacement.onTicks,
+            interval: 1,
+            minimum: 0,
             title: AxisTitle(
-              text: 'Trade Number',
+              text: 'Trade Number (0 = Starting Point)',
               textStyle: TextStyle(color: Colors.white70),
             ),
             labelStyle: TextStyle(color: Colors.white70),

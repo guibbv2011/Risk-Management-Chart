@@ -18,8 +18,8 @@ abstract class TradeRepository {
 }
 
 class InMemoryTradeRepository implements TradeRepository {
-  final List<Trade> _trades = [];
-  int _nextId = 1;
+  final List<Trade> _trades = [Trade(id: 0, result: 0.0)];
+  int _nextId = 0;
 
   @override
   Future<List<Trade>> getAllTrades() async {
@@ -64,7 +64,7 @@ class InMemoryTradeRepository implements TradeRepository {
   @override
   Future<void> clearAllTrades() async {
     _trades.clear();
-    _nextId = 1;
+    _nextId = 0;
   }
 
   @override

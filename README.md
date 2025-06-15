@@ -57,7 +57,7 @@ This project was created for traders who need to monitor their account balance w
 ```
 Initial Settings:
 - Account Balance: $10,000
-- Max Drawdown: $1,000  
+- Max Drawdown: $1,000
 - Loss Per Trade: 5%
 - Max Loss Per Trade: $1,000 × 5% = $50
 
@@ -92,8 +92,18 @@ With Dynamic Mode ON and +$500 profit:
 - **Validation**: Comprehensive input validation and error handling
 
 TODO:
-  - [x] - Add data dynamically, from the floating action button, which opens a text entry.
-  - [ ] - Zoom in/out on the X and Y axes.
-  - [ ] - Select range for visualization.
-  - [ ] - Store data on the local disk if the user does not have an account.
-  - [ ] - Create a login to store data in a clound.
+  Free Version:
+    - [x] - Add data dynamically, from the floating action button, which opens a text entry.
+    - [ ] - Zoom in/out on the X and Y axes.
+    - [ ] - Select range for visualization.
+    - [?] - Store data on the local disk if the user does not have an account.
+            - Native storage implementation [x]
+            - Mobile storage implementation [x]
+            - Web storage implementation [?]
+              - We can Import and Export data from/to Json files. But the auto loading of data from the local disk is not implemented yet.
+  Paid Version:
+    - [ ] - Add subscription model for premium users.
+    - [ ] - Integrate payment gateway for secure transactions.
+    - [ ] - Sign in with Google or X.
+    - [ ] - Connect to brokers, our app will handle multiple accounts of all connected brokers.
+    - [ ] - Implement advanced risk management strategies like realtime tracking of opened positions, daily loss, daily profit, and trailing stops.

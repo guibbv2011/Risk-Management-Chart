@@ -1,11 +1,14 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:signals/signals_flutter.dart';
 import '../view_model/risk_management_view_model.dart';
 import '../view_model/dialog_view_model.dart';
 import '../model/service/risk_management_service.dart';
 import 'widgets/trade_chart_widget.dart';
+import 'widgets/trade_list_widget.dart';
 import 'widgets/risk_controls_widget.dart';
 import 'dialogs/input_dialog.dart';
+import 'screens/settings_screen.dart';
 
 class HomeView extends StatefulWidget {
   final RiskManagementViewModel viewModel;
@@ -49,6 +52,11 @@ class _HomeViewState extends State<HomeView> with SignalsMixin {
             icon: const Icon(Icons.clear_all),
             onPressed: _showClearAllDialog,
             tooltip: 'Clear All Trades',
+          ),
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: _navigateToSettings,
+            tooltip: 'Settings',
           ),
         ],
       ),
@@ -124,26 +132,8 @@ class _HomeViewState extends State<HomeView> with SignalsMixin {
             );
           }),
 
-          // Main content
-          Expanded(
-            child: Column(
-              children: [
-                // Chart widget
-                Expanded(
-                  flex: 3,
-                  child: TradeChartWidget(viewModel: widget.viewModel),
-                ),
-
-                // Risk controls
-                RiskControlsWidget(
-                  viewModel: widget.viewModel,
-                  onMaxDrawdownPressed: () => _showMaxDrawdownDialog(),
-                  onLossPerTradePressed: () => _showLossPerTradeDialog(),
-                  onAddTradePressed: () => _showAddTradeDialog(),
-                ),
-              ],
-            ),
-          ),
+          // Main content - responsive layout
+          Expanded(child: _buildResponsiveLayout()),
         ],
       ),
     );
@@ -164,19 +154,31 @@ class _HomeViewState extends State<HomeView> with SignalsMixin {
 
   void _showMaxDrawdownDialog() {
     _dialogViewModel.openMaxDrawdownDialog(
-      isDynamicEnabled: widget.viewModel.riskSettings.value.isDynamicMaxDrawdown,
+      isDynamicEnabled:
+          widget.viewModel.riskSettings.value.isDynamicMaxDrawdown,
+      currentBalance: widget.viewModel.riskSettings.value.accountBalance
+          .toStringAsFixed(2),
+      currentMaxDrawdown: widget.viewModel.riskSettings.value.maxDrawdown
+          .toStringAsFixed(2),
     );
     _showInputDialog(
-      onConfirm: (value, [isDynamicEnabled]) async {
-        await widget.viewModel.updateMaxDrawdown(value, isDynamicEnabled);
+      onConfirm: (value, accountBalance, [isDynamicEnabled]) async {
+        await widget.viewModel.updateMaxDrawdown(
+          value,
+          accountBalance,
+          isDynamicEnabled,
+        );
       },
     );
   }
 
   void _showLossPerTradeDialog() {
-    _dialogViewModel.openLossPerTradeDialog();
+    _dialogViewModel.openLossPerTradeDialog(
+      currentValue: widget.viewModel.riskSettings.value.lossPerTradePercentage
+          .toStringAsFixed(0),
+    );
     _showInputDialog(
-      onConfirm: (value, [_]) async {
+      onConfirm: (value, _, [__]) async {
         await widget.viewModel.updateLossPerTrade(value);
       },
     );
@@ -185,13 +187,15 @@ class _HomeViewState extends State<HomeView> with SignalsMixin {
   void _showAddTradeDialog() {
     _dialogViewModel.openTradeResultDialog();
     _showInputDialog(
-      onConfirm: (value, [_]) async {
+      onConfirm: (value, _, [__]) async {
         await widget.viewModel.addTrade(value);
       },
     );
   }
 
-  void _showInputDialog({required Future<void> Function(String, [bool?]) onConfirm}) {
+  void _showInputDialog({
+    required Future<void> Function(String, String?, [bool?]) onConfirm,
+  }) {
     showDialog(
       context: context,
       builder: (context) =>
@@ -298,6 +302,103 @@ class _HomeViewState extends State<HomeView> with SignalsMixin {
           ),
         ],
       ),
+    );
+  }
+
+  void _navigateToSettings() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => SettingsScreen(viewModel: widget.viewModel),
+      ),
+    );
+  }
+
+  Widget _buildResponsiveLayout() {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isDesktopOrWeb = _isDesktopOrWeb();
+        final isMobile = _isMobile(constraints);
+
+        if (isDesktopOrWeb && !isMobile) {
+          return _buildDesktopLayout();
+        } else {
+          return _buildMobileLayout();
+        }
+      },
+    );
+  }
+
+  bool _isDesktopOrWeb() {
+    return kIsWeb ||
+        defaultTargetPlatform == TargetPlatform.windows ||
+        defaultTargetPlatform == TargetPlatform.linux ||
+        defaultTargetPlatform == TargetPlatform.macOS;
+  }
+
+  bool _isMobile(BoxConstraints constraints) {
+    // Consider it mobile if width is less than 800px
+    return constraints.maxWidth < 800;
+  }
+
+  Widget _buildMobileLayout() {
+    return Column(
+      children: [
+        // Chart widget (top half)
+        Expanded(flex: 2, child: TradeChartWidget(viewModel: widget.viewModel)),
+
+        // Trade list widget (bottom half)
+        Expanded(flex: 2, child: TradeListWidget(viewModel: widget.viewModel)),
+
+        // Risk controls (bottom)
+        RiskControlsWidget(
+          viewModel: widget.viewModel,
+          onMaxDrawdownPressed: () => _showMaxDrawdownDialog(),
+          onLossPerTradePressed: () => _showLossPerTradeDialog(),
+          onAddTradePressed: () => _showAddTradeDialog(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDesktopLayout() {
+    return Column(
+      children: [
+        // Main content area - side by side
+        Expanded(
+          child: Row(
+            children: [
+              // Chart widget (left side)
+              Expanded(
+                flex: 3,
+                child: Container(
+                  margin: const EdgeInsets.only(right: 8),
+                  child: TradeChartWidget(viewModel: widget.viewModel),
+                ),
+              ),
+
+              // Trade list widget (right side)
+              Expanded(
+                flex: 2,
+                child: Container(
+                  margin: const EdgeInsets.only(left: 8),
+                  child: TradeListWidget(viewModel: widget.viewModel),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // Risk controls (bottom)
+        Container(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: RiskControlsWidget(
+            viewModel: widget.viewModel,
+            onMaxDrawdownPressed: () => _showMaxDrawdownDialog(),
+            onLossPerTradePressed: () => _showLossPerTradeDialog(),
+            onAddTradePressed: () => _showAddTradeDialog(),
+          ),
+        ),
+      ],
     );
   }
 }
