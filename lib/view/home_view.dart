@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:signals/signals_flutter.dart';
 import '../view_model/risk_management_view_model.dart';
@@ -131,32 +132,8 @@ class _HomeViewState extends State<HomeView> with SignalsMixin {
             );
           }),
 
-          // Main content
-          Expanded(
-            child: Column(
-              children: [
-                // Chart widget
-                Expanded(
-                  flex: 2,
-                  child: TradeChartWidget(viewModel: widget.viewModel),
-                ),
-
-                // Trade list widget
-                Expanded(
-                  flex: 2,
-                  child: TradeListWidget(viewModel: widget.viewModel),
-                ),
-
-                // Risk controls
-                RiskControlsWidget(
-                  viewModel: widget.viewModel,
-                  onMaxDrawdownPressed: () => _showMaxDrawdownDialog(),
-                  onLossPerTradePressed: () => _showLossPerTradeDialog(),
-                  onAddTradePressed: () => _showAddTradeDialog(),
-                ),
-              ],
-            ),
-          ),
+          // Main content - responsive layout
+          Expanded(child: _buildResponsiveLayout()),
         ],
       ),
     );
@@ -333,6 +310,95 @@ class _HomeViewState extends State<HomeView> with SignalsMixin {
       MaterialPageRoute(
         builder: (context) => SettingsScreen(viewModel: widget.viewModel),
       ),
+    );
+  }
+
+  Widget _buildResponsiveLayout() {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isDesktopOrWeb = _isDesktopOrWeb();
+        final isMobile = _isMobile(constraints);
+
+        if (isDesktopOrWeb && !isMobile) {
+          return _buildDesktopLayout();
+        } else {
+          return _buildMobileLayout();
+        }
+      },
+    );
+  }
+
+  bool _isDesktopOrWeb() {
+    return kIsWeb ||
+        defaultTargetPlatform == TargetPlatform.windows ||
+        defaultTargetPlatform == TargetPlatform.linux ||
+        defaultTargetPlatform == TargetPlatform.macOS;
+  }
+
+  bool _isMobile(BoxConstraints constraints) {
+    // Consider it mobile if width is less than 800px
+    return constraints.maxWidth < 800;
+  }
+
+  Widget _buildMobileLayout() {
+    return Column(
+      children: [
+        // Chart widget (top half)
+        Expanded(flex: 2, child: TradeChartWidget(viewModel: widget.viewModel)),
+
+        // Trade list widget (bottom half)
+        Expanded(flex: 2, child: TradeListWidget(viewModel: widget.viewModel)),
+
+        // Risk controls (bottom)
+        RiskControlsWidget(
+          viewModel: widget.viewModel,
+          onMaxDrawdownPressed: () => _showMaxDrawdownDialog(),
+          onLossPerTradePressed: () => _showLossPerTradeDialog(),
+          onAddTradePressed: () => _showAddTradeDialog(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDesktopLayout() {
+    return Column(
+      children: [
+        // Main content area - side by side
+        Expanded(
+          child: Row(
+            children: [
+              // Chart widget (left side)
+              Expanded(
+                flex: 3,
+                child: Container(
+                  margin: const EdgeInsets.only(right: 8),
+                  child: TradeChartWidget(viewModel: widget.viewModel),
+                ),
+              ),
+
+              // Trade list widget (right side)
+              Expanded(
+                flex: 2,
+                child: Container(
+                  margin: const EdgeInsets.only(left: 8),
+                  child: TradeListWidget(viewModel: widget.viewModel),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // Risk controls (bottom)
+        Container(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: RiskControlsWidget(
+            viewModel: widget.viewModel,
+            onMaxDrawdownPressed: () => _showMaxDrawdownDialog(),
+            onLossPerTradePressed: () => _showLossPerTradeDialog(),
+            onAddTradePressed: () => _showAddTradeDialog(),
+          ),
+        ),
+      ],
     );
   }
 }
