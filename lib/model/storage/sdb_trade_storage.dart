@@ -10,6 +10,8 @@ import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart';
 import '../trade.dart';
 import 'storage_interface.dart';
+import '../../utils/error_handling.dart';
+import '../../utils/date_time_utils.dart';
 
 /// IndexedDB-based trade storage implementation
 /// Uses IndexedDB on web and SQLite on native platforms through idb_sqflite
@@ -53,9 +55,14 @@ class SdbTradeStorage implements TradeStorage {
         'IndexedDB database initialized successfully on ${_getPlatformInfo()}',
       );
     } catch (e) {
-      debugPrint('IndexedDB database initialization error: ${e.toString()}');
+      ErrorHandler.logError(
+        'SdbTradeStorage',
+        e,
+        additionalInfo: 'Database initialization',
+      );
       throw StorageException(
         'Failed to initialize IndexedDB database: ${e.toString()}',
+        originalError: e,
       );
     }
   }
@@ -137,57 +144,57 @@ class SdbTradeStorage implements TradeStorage {
 
   @override
   Future<List<Trade>> getAllTrades() async {
-    try {
-      final db = await database;
-      final transaction = db.transaction(_storeName, 'readonly');
-      final store = transaction.objectStore(_storeName);
+    return await ErrorHandler.handleStorageOperation(
+      'get all trades',
+      () async {
+        final db = await database;
+        final transaction = db.transaction(_storeName, 'readonly');
+        final store = transaction.objectStore(_storeName);
 
-      final List<Trade> trades = [];
-      final cursorStream = store.openCursor();
+        final List<Trade> trades = [];
+        final cursorStream = store.openCursor();
 
-      await for (final cursor in cursorStream) {
-        trades.add(_tradeFromMap(cursor.value as Map<String, dynamic>));
-        cursor.next();
-      }
+        await for (final cursor in cursorStream) {
+          trades.add(_tradeFromMap(cursor.value as Map<String, dynamic>));
+          cursor.next();
+        }
 
-      await transaction.completed;
+        await transaction.completed;
 
-      // Sort by timestamp
-      trades.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+        // Sort by timestamp
+        trades.sort((a, b) => a.timestamp.compareTo(b.timestamp));
 
-      return trades;
-    } catch (e) {
-      throw StorageException('Failed to get all trades: ${e.toString()}');
-    }
+        return trades;
+      },
+      context: 'SdbTradeStorage',
+    );
   }
 
   @override
   Future<Trade> saveTrade(Trade trade) async {
-    try {
+    return await ErrorHandler.handleStorageOperation('save trade', () async {
       final db = await database;
       final transaction = db.transaction(_storeName, 'readwrite');
       final store = transaction.objectStore(_storeName);
-      final now = DateTime.now();
+      final timestamps = DateTimeUtils.createTimestamps();
 
       final tradeData = {
         'result': trade.result,
-        'timestamp': trade.timestamp.toIso8601String(),
-        'created_at': now.toIso8601String(),
-        'updated_at': now.toIso8601String(),
+        'timestamp': DateTimeUtils.toIso8601(trade.timestamp),
+        'created_at': timestamps['created_at'],
+        'updated_at': timestamps['updated_at'],
       };
 
       final key = await store.add(tradeData);
       await transaction.completed;
 
       return trade.copyWith(id: key as int);
-    } catch (e) {
-      throw StorageException('Failed to save trade: ${e.toString()}');
-    }
+    }, context: 'SdbTradeStorage');
   }
 
   @override
   Future<Trade> updateTrade(Trade trade) async {
-    try {
+    return await ErrorHandler.handleStorageOperation('update trade', () async {
       final db = await database;
       final transaction = db.transaction(_storeName, 'readwrite');
       final store = transaction.objectStore(_storeName);
@@ -198,26 +205,27 @@ class SdbTradeStorage implements TradeStorage {
         throw StorageException('Trade with id ${trade.id} not found');
       }
 
+      final timestamps = DateTimeUtils.updateTimestamp(
+        existing as Map<String, dynamic>,
+      );
       final updatedData = {
         'id': trade.id,
         'result': trade.result,
-        'timestamp': trade.timestamp.toIso8601String(),
-        'created_at': (existing as Map<String, dynamic>)['created_at'],
-        'updated_at': DateTime.now().toIso8601String(),
+        'timestamp': DateTimeUtils.toIso8601(trade.timestamp),
+        'created_at': timestamps['created_at'],
+        'updated_at': timestamps['updated_at'],
       };
 
       await store.put(updatedData);
       await transaction.completed;
 
       return trade;
-    } catch (e) {
-      throw StorageException('Failed to update trade: ${e.toString()}');
-    }
+    }, context: 'SdbTradeStorage');
   }
 
   @override
   Future<void> deleteTrade(int id) async {
-    try {
+    return await ErrorHandler.handleStorageOperation('delete trade', () async {
       final db = await database;
       final transaction = db.transaction(_storeName, 'readwrite');
       final store = transaction.objectStore(_storeName);
@@ -229,77 +237,79 @@ class SdbTradeStorage implements TradeStorage {
 
       await store.delete(id);
       await transaction.completed;
-    } catch (e) {
-      throw StorageException('Failed to delete trade: ${e.toString()}');
-    }
+    }, context: 'SdbTradeStorage');
   }
 
   @override
   Future<Trade?> getTradeById(int id) async {
-    try {
-      final db = await database;
-      final transaction = db.transaction(_storeName, 'readonly');
-      final store = transaction.objectStore(_storeName);
+    return await ErrorHandler.handleStorageOperation(
+      'get trade by id',
+      () async {
+        final db = await database;
+        final transaction = db.transaction(_storeName, 'readonly');
+        final store = transaction.objectStore(_storeName);
 
-      final data = await store.getObject(id);
-      await transaction.completed;
+        final data = await store.getObject(id);
+        await transaction.completed;
 
-      if (data == null) {
-        return null;
-      }
+        if (data == null) {
+          return null;
+        }
 
-      return _tradeFromMap(data as Map<String, dynamic>);
-    } catch (e) {
-      throw StorageException('Failed to get trade by id: ${e.toString()}');
-    }
+        return _tradeFromMap(data as Map<String, dynamic>);
+      },
+      context: 'SdbTradeStorage',
+    );
   }
 
   @override
   Future<void> clearAllTrades() async {
-    try {
-      final db = await database;
-      final transaction = db.transaction(_storeName, 'readwrite');
-      final store = transaction.objectStore(_storeName);
+    return await ErrorHandler.handleStorageOperation(
+      'clear all trades',
+      () async {
+        final db = await database;
+        final transaction = db.transaction(_storeName, 'readwrite');
+        final store = transaction.objectStore(_storeName);
 
-      await store.clear();
-      await transaction.completed;
-    } catch (e) {
-      throw StorageException('Failed to clear all trades: ${e.toString()}');
-    }
+        await store.clear();
+        await transaction.completed;
+      },
+      context: 'SdbTradeStorage',
+    );
   }
 
   @override
   Future<List<Trade>> getTradesByDateRange(DateTime start, DateTime end) async {
-    try {
-      final db = await database;
-      final transaction = db.transaction(_storeName, 'readonly');
-      final store = transaction.objectStore(_storeName);
-      final index = store.index('timestamp');
+    return await ErrorHandler.handleStorageOperation(
+      'get trades by date range',
+      () async {
+        final db = await database;
+        final transaction = db.transaction(_storeName, 'readonly');
+        final store = transaction.objectStore(_storeName);
+        final index = store.index('timestamp');
 
-      final range = idb.KeyRange.bound(
-        start.toIso8601String(),
-        end.toIso8601String(),
-      );
+        final range = idb.KeyRange.bound(
+          DateTimeUtils.toIso8601(start),
+          DateTimeUtils.toIso8601(end),
+        );
 
-      final List<Trade> trades = [];
-      final cursorStream = index.openCursor(range: range);
+        final List<Trade> trades = [];
+        final cursorStream = index.openCursor(range: range);
 
-      await for (final cursor in cursorStream) {
-        trades.add(_tradeFromMap(cursor.value as Map<String, dynamic>));
-        cursor.next();
-      }
+        await for (final cursor in cursorStream) {
+          trades.add(_tradeFromMap(cursor.value as Map<String, dynamic>));
+          cursor.next();
+        }
 
-      await transaction.completed;
+        await transaction.completed;
 
-      // Sort by timestamp
-      trades.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+        // Sort by timestamp
+        trades.sort((a, b) => a.timestamp.compareTo(b.timestamp));
 
-      return trades;
-    } catch (e) {
-      throw StorageException(
-        'Failed to get trades by date range: ${e.toString()}',
-      );
-    }
+        return trades;
+      },
+      context: 'SdbTradeStorage',
+    );
   }
 
   @override
@@ -465,7 +475,7 @@ class SdbTradeStorage implements TradeStorage {
     return Trade(
       id: data['id'] as int?,
       result: (data['result'] as num).toDouble(),
-      timestamp: DateTime.parse(data['timestamp'] as String),
+      timestamp: DateTimeUtils.fromIso8601(data['timestamp'] as String),
     );
   }
 
@@ -477,13 +487,4 @@ class SdbTradeStorage implements TradeStorage {
       return '${Platform.operatingSystem} (SQLite via IndexedDB API)';
     }
   }
-}
-
-/// Custom exception for storage operations
-class StorageException implements Exception {
-  final String message;
-  StorageException(this.message);
-
-  @override
-  String toString() => 'StorageException: $message';
 }

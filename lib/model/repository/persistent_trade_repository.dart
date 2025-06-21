@@ -1,5 +1,7 @@
 import '../trade.dart';
 import '../storage/storage_interface.dart';
+import '../../utils/trade_statistics_calculator.dart';
+import '../../utils/error_handling.dart';
 
 import 'trade_repository.dart';
 
@@ -41,7 +43,7 @@ class PersistentTradeRepository implements TradeRepository {
   Future<Trade> addTrade(Trade trade) async {
     await _ensureInitialized();
 
-    try {
+    return await ErrorHandler.handleRepositoryOperation('add trade', () async {
       final savedTrade = await _storage.saveTrade(trade);
 
       // Update cache
@@ -50,46 +52,48 @@ class PersistentTradeRepository implements TradeRepository {
       }
 
       return savedTrade;
-    } catch (e) {
-      throw Exception('Failed to add trade: ${e.toString()}');
-    }
+    }, context: 'PersistentTradeRepository');
   }
 
   @override
   Future<Trade> updateTrade(Trade trade) async {
     await _ensureInitialized();
 
-    try {
-      final updatedTrade = await _storage.updateTrade(trade);
+    return await ErrorHandler.handleRepositoryOperation(
+      'update trade',
+      () async {
+        final updatedTrade = await _storage.updateTrade(trade);
 
-      // Update cache
-      if (_cachedTrades != null) {
-        final index = _cachedTrades!.indexWhere((t) => t.id == trade.id);
-        if (index != -1) {
-          _cachedTrades![index] = updatedTrade;
+        // Update cache
+        if (_cachedTrades != null) {
+          final index = _cachedTrades!.indexWhere((t) => t.id == trade.id);
+          if (index != -1) {
+            _cachedTrades![index] = updatedTrade;
+          }
         }
-      }
 
-      return updatedTrade;
-    } catch (e) {
-      throw Exception('Failed to update trade: ${e.toString()}');
-    }
+        return updatedTrade;
+      },
+      context: 'PersistentTradeRepository',
+    );
   }
 
   @override
   Future<void> deleteTrade(int id) async {
     await _ensureInitialized();
 
-    try {
-      await _storage.deleteTrade(id);
+    return await ErrorHandler.handleRepositoryOperation(
+      'delete trade',
+      () async {
+        await _storage.deleteTrade(id);
 
-      // Update cache
-      if (_cachedTrades != null) {
-        _cachedTrades!.removeWhere((trade) => trade.id == id);
-      }
-    } catch (e) {
-      throw Exception('Failed to delete trade: ${e.toString()}');
-    }
+        // Update cache
+        if (_cachedTrades != null) {
+          _cachedTrades!.removeWhere((trade) => trade.id == id);
+        }
+      },
+      context: 'PersistentTradeRepository',
+    );
   }
 
   @override
@@ -113,102 +117,69 @@ class PersistentTradeRepository implements TradeRepository {
   Future<void> clearAllTrades() async {
     await _ensureInitialized();
 
-    try {
-      await _storage.clearAllTrades();
-      _clearCache();
-    } catch (e) {
-      throw Exception('Failed to clear all trades: ${e.toString()}');
-    }
+    return await ErrorHandler.handleRepositoryOperation(
+      'clear all trades',
+      () async {
+        await _storage.clearAllTrades();
+        _clearCache();
+      },
+      context: 'PersistentTradeRepository',
+    );
   }
 
   @override
   Future<List<Trade>> getTradesByDateRange(DateTime start, DateTime end) async {
     await _ensureInitialized();
 
-    try {
-      return await _storage.getTradesByDateRange(start, end);
-    } catch (e) {
-      throw Exception('Failed to get trades by date range: ${e.toString()}');
-    }
+    return await ErrorHandler.handleRepositoryOperation(
+      'get trades by date range',
+      () async {
+        return await _storage.getTradesByDateRange(start, end);
+      },
+      context: 'PersistentTradeRepository',
+    );
   }
 
   @override
   Future<double> getTotalPnL() async {
     final trades = await getAllTrades();
-    double total = 0.0;
-    for (final trade in trades) {
-      total += trade.result;
-    }
-    return total;
+    return TradeStatisticsCalculator.calculateTotalPnL(trades);
   }
 
   @override
   Future<double> getCurrentDrawdown() async {
     final trades = await getAllTrades();
-    if (trades.isEmpty) return 0.0;
-
-    double peak = 0.0;
-    double currentBalance = 0.0;
-    double maxDrawdown = 0.0;
-
-    for (final trade in trades) {
-      currentBalance += trade.result;
-      if (currentBalance > peak) {
-        peak = currentBalance;
-      }
-      final drawdown = peak - currentBalance;
-      if (drawdown > maxDrawdown) {
-        maxDrawdown = drawdown;
-      }
-    }
-
-    return maxDrawdown;
+    return TradeStatisticsCalculator.calculateCurrentDrawdown(trades);
   }
 
   @override
   Future<int> getWinCount() async {
     final trades = await getAllTrades();
-    return trades.where((trade) => trade.result > 0).length;
+    return TradeStatisticsCalculator.calculateWinCount(trades);
   }
 
   @override
   Future<int> getLossCount() async {
     final trades = await getAllTrades();
-    return trades.where((trade) => trade.result < 0).length;
+    return TradeStatisticsCalculator.calculateLossCount(trades);
   }
 
   @override
   Future<double> getWinRate() async {
     final trades = await getAllTrades();
-    if (trades.isEmpty) return 0.0;
-    final winCount = await getWinCount();
-    return (winCount / trades.length) * 100;
+    return TradeStatisticsCalculator.calculateWinRate(trades);
   }
 
   @override
   Future<double> getAverageWin() async {
     final trades = await getAllTrades();
-    final wins = trades.where((trade) => trade.result > 0).toList();
-    if (wins.isEmpty) return 0.0;
-
-    double total = 0.0;
-    for (final trade in wins) {
-      total += trade.result;
-    }
-    return total / wins.length;
+    return TradeStatisticsCalculator.calculateAverageWin(trades);
   }
 
   @override
   Future<double> getAverageLoss() async {
     final trades = await getAllTrades();
-    final losses = trades.where((trade) => trade.result < 0).toList();
-    if (losses.isEmpty) return 0.0;
-
-    double total = 0.0;
-    for (final trade in losses) {
-      total += trade.result;
-    }
-    return total / losses.length;
+    return TradeStatisticsCalculator.calculateAverageLoss(trades);
   }
 
   /// Force refresh cache from storage
@@ -240,8 +211,13 @@ class PersistentTradeRepository implements TradeRepository {
   Future<List<Trade>> getRecentTrades({int limit = 10}) async {
     await _ensureInitialized();
 
-    // Use storage's efficient method
-    return await _storage.getRecentTrades(limit: limit);
+    return await ErrorHandler.handleRepositoryOperation(
+      'get recent trades',
+      () async {
+        return await _storage.getRecentTrades(limit: limit);
+      },
+      context: 'PersistentTradeRepository',
+    );
   }
 
   /// Export trades for backup
@@ -256,23 +232,25 @@ class PersistentTradeRepository implements TradeRepository {
   Future<void> importTrades(List<Map<String, dynamic>> tradesData) async {
     await _ensureInitialized();
 
-    try {
-      // Clear existing trades first
-      await clearAllTrades();
+    return await ErrorHandler.handleRepositoryOperation(
+      'import trades',
+      () async {
+        // Clear existing trades first
+        await clearAllTrades();
 
-      // Add each trade
-      for (final tradeData in tradesData) {
-        final trade = Trade.fromJson(tradeData);
-        // Create trade without ID to let storage assign new ID
-        final newTrade = Trade(
-          result: trade.result,
-          timestamp: trade.timestamp,
-        );
-        await addTrade(newTrade);
-      }
-    } catch (e) {
-      throw Exception('Failed to import trades: ${e.toString()}');
-    }
+        // Add each trade
+        for (final tradeData in tradesData) {
+          final trade = Trade.fromJson(tradeData);
+          // Create trade without ID to let storage assign new ID
+          final newTrade = Trade(
+            result: trade.result,
+            timestamp: trade.timestamp,
+          );
+          await addTrade(newTrade);
+        }
+      },
+      context: 'PersistentTradeRepository',
+    );
   }
 
   /// Close the repository and clean up resources

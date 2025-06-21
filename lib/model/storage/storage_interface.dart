@@ -1,6 +1,10 @@
 import '../trade.dart';
 import '../risk_management.dart';
 
+// Re-export the StorageException from error handling utilities
+// This maintains backward compatibility while using the centralized error handling
+export '../../utils/error_handling.dart' show StorageException;
+
 /// Abstract interface for configuration storage
 abstract class ConfigStorage {
   Future<void> saveRiskSettings(RiskManagement riskSettings);
