@@ -1,6 +1,6 @@
 import '../trade.dart';
 import '../storage/storage_interface.dart';
-import '../storage/sqlite_trade_storage.dart';
+
 import 'trade_repository.dart';
 
 /// Persistent implementation of TradeRepository using local storage
@@ -226,10 +226,10 @@ class PersistentTradeRepository implements TradeRepository {
       return _cachedTrades!.length;
     }
 
-    // If using SqliteTradeStorage, we can get count efficiently
-    if (_storage is SqliteTradeStorage) {
-      return await _storage.getTradesCount();
-    }
+    // // If using SqliteTradeStorage, we can get count efficiently
+    // if (_storage is SqliteTradeStorage) {
+    //   return await _storage.getTradesCount();
+    // }
 
     // Fallback: load all trades and count
     final trades = await getAllTrades();
@@ -240,15 +240,8 @@ class PersistentTradeRepository implements TradeRepository {
   Future<List<Trade>> getRecentTrades({int limit = 10}) async {
     await _ensureInitialized();
 
-    // If using SqliteTradeStorage, use efficient method
-    if (_storage is SqliteTradeStorage) {
-      return await _storage.getRecentTrades(limit: limit);
-    }
-
-    // Fallback: get all trades and take the most recent
-    final trades = await getAllTrades();
-    trades.sort((a, b) => b.timestamp.compareTo(a.timestamp));
-    return trades.take(limit).toList();
+    // Use storage's efficient method
+    return await _storage.getRecentTrades(limit: limit);
   }
 
   /// Export trades for backup
@@ -272,7 +265,6 @@ class PersistentTradeRepository implements TradeRepository {
         final trade = Trade.fromJson(tradeData);
         // Create trade without ID to let storage assign new ID
         final newTrade = Trade(
-          id: 0, // Will be assigned by storage
           result: trade.result,
           timestamp: trade.timestamp,
         );

@@ -274,9 +274,9 @@ Once you're comfortable with the basics:
    - Use the position size calculator (coming soon)
 
 2. **Review Documentation**
-   - Read the [Risk Management Guide](risk-management.md)
-   - Understand [Dynamic Drawdown](dynamic-drawdown.md)
-   - Learn about [Trading Statistics](statistics.md)
+   - Check the main project README.md for detailed features
+   - Review the storage documentation for persistence details
+   - Understand the risk management calculations in the API docs
 
 3. **Optimize Your Strategy**
    - Track performance over time
@@ -285,9 +285,9 @@ Once you're comfortable with the basics:
 
 ## Need Help?
 
-- **Troubleshooting:** See [Common Issues](troubleshooting.md)
-- **Detailed Guide:** Check [Basic Usage](basic-usage.md)
-- **Advanced Features:** Read [Risk Management Setup](risk-management.md)
+- **Troubleshooting:** See the main TROUBLESHOOTING.md file
+- **Storage Issues:** Check the storage documentation folder
+- **API Reference:** Review the models.md and risk-calculations.md files
 
 ---
 

@@ -1,9 +1,9 @@
 class Trade {
-  final int id;
+  final int? id;
   final double result;
   final DateTime timestamp;
 
-  Trade({required this.id, required this.result, DateTime? timestamp})
+  Trade({this.id, required this.result, DateTime? timestamp})
     : timestamp = timestamp ?? DateTime.now();
 
   Trade copyWith({int? id, double? result, DateTime? timestamp}) {
@@ -24,7 +24,7 @@ class Trade {
 
   factory Trade.fromJson(Map<String, dynamic> json) {
     return Trade(
-      id: json['id'] as int,
+      id: json['id'] as int?,
       result: (json['result'] as num).toDouble(),
       timestamp: DateTime.parse(json['timestamp'] as String),
     );

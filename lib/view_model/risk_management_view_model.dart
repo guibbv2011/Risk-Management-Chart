@@ -134,8 +134,13 @@ class RiskManagementViewModel extends ChangeNotifier {
   }
 
   Future<void> _refreshData() async {
-    debugPrint('Refreshing data from storage...');
+    debugPrint('🔄 Refreshing data from storage...');
+
+    debugPrint('📊 Loading trades from storage...');
     final trades = await _riskService.getAllTrades();
+    debugPrint('📊 Loaded ${trades.length} trades from storage');
+
+    debugPrint('📈 Calculating statistics...');
     final stats = await _riskService.getTradingStatistics();
     final status = await _riskService.checkRiskStatus();
 
@@ -143,23 +148,37 @@ class RiskManagementViewModel extends ChangeNotifier {
     _statistics.value = stats;
     _riskStatus.value = status;
     _riskSettings.value = _riskService.riskSettings;
+
+    debugPrint('✅ Data refresh completed:');
+    debugPrint('   Trades loaded: ${trades.length}');
     debugPrint(
-      '✓ Data refreshed - ${trades.length} trades loaded, Current balance: \$${_riskSettings.value.currentBalance.toStringAsFixed(2)}',
+      '   Current balance: \$${_riskSettings.value.currentBalance.toStringAsFixed(2)}',
     );
+    debugPrint('   Total P&L: \$${stats.totalPnL.toStringAsFixed(2)}');
+    debugPrint('   Risk status: ${status.name}');
   }
 
   /// Load saved risk settings from storage
   Future<void> _loadSavedRiskSettings() async {
     try {
-      debugPrint('Loading saved risk settings from storage...');
+      debugPrint('📂 Loading saved risk settings from storage...');
       final savedSettings = await _configStorage.loadRiskSettings();
       if (savedSettings != null) {
+        debugPrint('📄 Found saved settings in storage');
+        debugPrint(
+          '   Saved Balance: \$${savedSettings.currentBalance.toStringAsFixed(2)}',
+        );
+        debugPrint(
+          '   Saved Max DD: \$${savedSettings.maxDrawdown.toStringAsFixed(2)}',
+        );
+        debugPrint(
+          '   Saved Loss %: ${savedSettings.lossPerTradePercentage.toStringAsFixed(1)}%',
+        );
+
         // Validate loaded settings
         if (_riskService.validateRiskSettings(savedSettings)) {
           _riskService.updateRiskSettings(savedSettings);
-          debugPrint(
-            '✓ Loaded saved risk settings - Balance: \$${savedSettings.currentBalance.toStringAsFixed(2)}, Max DD: \$${savedSettings.maxDrawdown.toStringAsFixed(2)}',
-          );
+          debugPrint('✅ Loaded and applied saved risk settings successfully');
         } else {
           debugPrint('✗ Invalid saved risk settings, using defaults');
         }
@@ -176,9 +195,29 @@ class RiskManagementViewModel extends ChangeNotifier {
   /// Save risk settings to storage
   Future<void> _saveRiskSettings() async {
     try {
-      debugPrint('Saving risk settings to storage...');
+      debugPrint('💾 Saving risk settings to storage...');
+      debugPrint(
+        '   Balance: \$${_riskSettings.value.currentBalance.toStringAsFixed(2)}',
+      );
+      debugPrint(
+        '   Max DD: \$${_riskSettings.value.maxDrawdown.toStringAsFixed(2)}',
+      );
+      debugPrint(
+        '   Loss %: ${_riskSettings.value.lossPerTradePercentage.toStringAsFixed(1)}%',
+      );
+
       await _configStorage.saveRiskSettings(_riskSettings.value);
-      debugPrint('✓ Risk settings saved to primary storage successfully');
+      debugPrint('✅ Risk settings saved to primary storage successfully');
+
+      // Verify settings were saved by reading them back
+      final savedSettings = await _configStorage.loadRiskSettings();
+      if (savedSettings != null) {
+        debugPrint(
+          '📋 Verification: Settings loaded back with balance \$${savedSettings.currentBalance.toStringAsFixed(2)}',
+        );
+      } else {
+        debugPrint('⚠️ Warning: Could not verify saved settings');
+      }
 
       // Create simple backup
       debugPrint('Creating backup copies...');
@@ -205,13 +244,25 @@ class RiskManagementViewModel extends ChangeNotifier {
         'Current balance before trade: \$${_riskSettings.value.currentBalance.toStringAsFixed(2)}',
       );
 
+      debugPrint('📤 Saving trade to storage...');
       await _riskService.addTrade(tradeResult);
       debugPrint('✓ Trade added to database successfully');
+
+      // Verify trade was actually saved
+      final tradesAfter = await _riskService.getAllTrades();
+      debugPrint(
+        '📊 Verification: ${tradesAfter.length} trades now in storage',
+      );
 
       _tradeResultInput.value = '';
 
       // Update local risk settings to reflect the balance change
       _riskSettings.value = _riskService.riskSettings;
+
+      // Save updated risk settings immediately after trade
+      debugPrint('💾 Saving updated risk settings after trade...');
+      await _saveRiskSettings();
+      debugPrint('🔄 Refreshing data after trade addition...');
       await _refreshData();
 
       debugPrint(
@@ -397,7 +448,14 @@ class RiskManagementViewModel extends ChangeNotifier {
       _isLoading.value = true;
       _errorMessage.value = null;
 
+      debugPrint('🗑️ Clearing all trades from storage...');
       await _riskService.clearAllTrades();
+      debugPrint('✅ All trades cleared from storage');
+
+      // Save updated risk settings after clearing trades (balance reset)
+      debugPrint('💾 Saving reset risk settings...');
+      await _saveRiskSettings();
+      debugPrint('🔄 Refreshing data after clearing trades...');
       await _refreshData();
 
       // Create simple backup after clearing trades

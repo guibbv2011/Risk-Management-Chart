@@ -84,7 +84,7 @@ The Risk Management Trading App is a comprehensive Flutter application designed 
 ## 📁 Project Structure
 
 ```
-risk_managment/
+risk_management/
 ├── lib/
 │   ├── main.dart                          # App entry point
 │   ├── model/                             # Data layer
@@ -205,14 +205,14 @@ Position Size = Max Loss Per Trade / |Entry Price - Stop Loss|
 
 ### Trade Entry Flow
 ```
-User Input → Dialog Validation → ViewModel Processing → Service Validation 
-→ Repository Storage → Balance Update → Statistics Recalculation 
+User Input → Dialog Validation → ViewModel Processing → Service Validation
+→ Repository Storage → Balance Update → Statistics Recalculation
 → Signal Updates → UI Refresh
 ```
 
 ### Risk Status Updates
 ```
-Balance Change → Risk Calculation → Status Classification → Color Update 
+Balance Change → Risk Calculation → Status Classification → Color Update
 → UI Indicator Refresh
 ```
 
@@ -265,7 +265,7 @@ Signal Change → Watch Widget Detection → Component Rebuild → UI Update
 
 ### Supported Platforms
 - **Android**: Native mobile experience
-- **iOS**: Native mobile experience  
+- **iOS**: Native mobile experience
 - **Web**: Browser-based access
 - **Windows**: Desktop application
 - **macOS**: Desktop application
@@ -336,20 +336,20 @@ Signal Change → Watch Widget Detection → Component Rebuild → UI Update
 
 ### For Users
 1. Read the [Quick Start Guide](guides/quick-start.md)
-2. Follow [Installation Instructions](guides/installation.md)
+2. Check the main project README.md for setup instructions
 3. Configure your risk parameters
 4. Start tracking trades
 
 ### For Developers
-1. Set up [Development Environment](guides/development-setup.md)
+1. Set up your Flutter development environment
 2. Review [Architecture Documentation](diagrams/mvvm-architecture.md)
-3. Study [API Documentation](api/)
+3. Study available [API Documentation](api/)
 4. Run tests and contribute
 
 ### For Contributors
-1. Read [Contributing Guidelines](guides/contributing.md)
-2. Follow [Code Style Standards](guides/code-style.md)
-3. Submit pull requests following [PR Process](guides/pr-process.md)
+1. Follow Flutter and Dart best practices
+2. Maintain consistent code style
+3. Submit pull requests with clear descriptions
 
 ---
 
@@ -360,7 +360,7 @@ Signal Change → Watch Widget Detection → Component Rebuild → UI Update
 - **Community**: Trading-focused user community
 - **Updates**: Regular feature releases and improvements
 
-**Version**: 1.0.0  
-**Last Updated**: December 2024  
-**License**: MIT License  
+**Version**: 1.0.0
+**Last Updated**: December 2024
+**License**: MIT License
 **Platform**: Flutter 3.x / Dart 3.x

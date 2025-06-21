@@ -3,10 +3,11 @@ import 'package:flutter/material.dart';
 import 'model/repository/persistent_trade_repository.dart';
 import 'model/service/risk_management_service.dart';
 import 'model/storage/app_storage.dart';
-import 'model/storage/web_storage_init.dart';
+
 import 'view_model/risk_management_view_model.dart';
 import 'view/home_view.dart';
 import 'view/screens/initialization_screen.dart';
+
 import 'services/simple_persistence_fix.dart';
 import 'utils/initialization_validator.dart';
 
@@ -45,12 +46,7 @@ class MyApp extends StatelessWidget {
       debugPrint('Platform: ${kIsWeb ? 'Web' : 'Native'}');
       debugPrint('Mode: ${kDebugMode ? 'Debug' : 'Release'}');
 
-      // Initialize platform-specific storage
-      debugPrint('Initializing platform storage...');
-      await StorageInitializer.initialize();
-      debugPrint('Platform storage initialized successfully');
-
-      // Initialize app storage
+      // Initialize app storage with IndexedDB/SQLite
       debugPrint('Initializing app storage...');
       await AppStorageManager.initialize();
       debugPrint('App storage initialized successfully');
@@ -100,6 +96,11 @@ class MyApp extends StatelessWidget {
       final finalHasData = await AppStorageManager.instance.hasStoredData();
       debugPrint('🎯 Final data status: $finalHasData');
 
+      // Log storage implementation info
+      debugPrint(
+        '📊 Storage: ${kIsWeb ? 'Web (IndexedDB)' : 'Native (SQLite)'}',
+      );
+
       debugPrint('App initialization completed successfully');
     } catch (e) {
       debugPrint('App initialization failed: $e');
@@ -108,10 +109,11 @@ class MyApp extends StatelessWidget {
       // For web platform, provide more specific error information
       if (kIsWeb) {
         throw Exception(
-          'Web storage initialization failed. This may be due to:\n'
+          'IndexedDB storage initialization failed. This may be due to:\n'
           '• Browser storage restrictions\n'
           '• IndexedDB not being available\n'
-          '• Third-party cookies disabled\n\n'
+          '• Third-party cookies disabled\n'
+          '• Private browsing mode\n\n'
           'Original error: ${e.toString()}',
         );
       }

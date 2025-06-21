@@ -1,17 +1,17 @@
 import 'package:flutter/foundation.dart';
 import 'storage_interface.dart';
 import 'shared_preferences_config_storage.dart';
-import 'sqlite_trade_storage.dart';
+import 'storage_factory.dart';
 import '../risk_management.dart';
 
 /// Combined storage implementation that manages both config and trade storage
 class AppStorageImpl implements AppStorage {
   late final SharedPreferencesConfigStorage _configStorage;
-  late final SqliteTradeStorage _tradeStorage;
+  late final TradeStorage _tradeStorage;
 
   AppStorageImpl() {
     _configStorage = SharedPreferencesConfigStorage();
-    _tradeStorage = SqliteTradeStorage();
+    _tradeStorage = StorageFactory.createTradeStorage();
   }
 
   @override
@@ -148,7 +148,10 @@ class AppStorageManager {
 
   /// Initialize the storage manager
   static Future<void> initialize() async {
-    await instance.initialize();
+    if (_instance == null) {
+      _instance = AppStorageImpl();
+    }
+    await _instance!.initialize();
   }
 
   /// Close the storage manager

@@ -91,7 +91,6 @@ class SqliteTradeStorage implements TradeStorage {
           }
 
         case TargetPlatform.fuchsia:
-        default:
           return join(await getDatabasesPath(), _databaseName);
       }
     } catch (e) {
@@ -365,7 +364,7 @@ class SqliteTradeStorage implements TradeStorage {
   /// Convert database map to Trade object
   Trade _tradeFromMap(Map<String, dynamic> map) {
     return Trade(
-      id: map['id'] as int,
+      id: map['id'] as int?,
       result: (map['result'] as num).toDouble(),
       timestamp: DateTime.parse(map['timestamp'] as String),
     );

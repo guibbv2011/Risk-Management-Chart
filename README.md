@@ -38,6 +38,7 @@ This project was created for traders who need to monitor their account balance w
 - **Repository Pattern**: Abstracted data layer for easy testing and maintenance
 - **Service Layer**: Business logic encapsulation
 - **Component-based UI**: Reusable widgets and components
+- **Cross-Platform Storage**: IndexedDB on web, SQLite on native platforms
 
 ## 🔧 How It Works
 
@@ -88,19 +89,46 @@ With Dynamic Mode ON and +$500 profit:
 - **State Management**: Signals for reactive programming
 - **Charts**: Syncfusion Flutter Charts for professional visualization
 - **Architecture**: MVVM with Repository and Service patterns
-- **Data Persistence**: In-memory storage with plans for local/cloud storage
+- **Data Persistence**: Cross-platform storage with IndexedDB (web) and SQLite (native)
+- **Storage Packages**: `idb_sqflite` and `idb_shim` for unified storage API
 - **Validation**: Comprehensive input validation and error handling
+
+## 💾 Storage Implementation
+
+The app now features a unified storage system that works seamlessly across all platforms:
+
+### Cross-Platform Storage
+- **Web**: Uses IndexedDB for persistent browser storage
+- **Mobile/Desktop**: Uses SQLite for native database storage
+- **Unified API**: Same interface across all platforms using `idb_sqflite`
+
+### Storage Features
+- **Automatic Migration**: Seamless switching between storage implementations
+- **Performance Optimized**: Indexed queries for fast data retrieval
+- **Transactional**: ACID-compliant operations
+- **Development Tools**: Built-in storage demo and testing utilities
+
+### Automatic Data Persistence
+The app automatically:
+- Saves all trades and settings when modified
+- Loads existing data on app startup  
+- Maintains data across browser sessions (web)
+- Stores data locally on device (mobile/desktop)
+
+For detailed implementation guide, see [INDEXEDDB_STORAGE.md](INDEXEDDB_STORAGE.md)
 
 TODO:
   Free Version:
     - [x] - Add data dynamically, from the floating action button, which opens a text entry.
     - [ ] - Zoom in/out on the X and Y axes.
     - [ ] - Select range for visualization.
-    - [?] - Store data on the local disk if the user does not have an account.
+    - [x] - Store data on the local disk automatically.
             - Native storage implementation [x]
-            - Mobile storage implementation [x]
-            - Web storage implementation [?]
-              - We can Import and Export data from/to Json files. But the auto loading of data from the local disk is not implemented yet.
+            - Mobile storage implementation [x] 
+            - Web storage implementation [x] - IndexedDB implementation completed
+              - Automatic persistent storage using IndexedDB on web
+              - Unified API with SQLite on native platforms
+              - All user data automatically saved and loaded
   Paid Version:
     - [ ] - Add subscription model for premium users.
     - [ ] - Integrate payment gateway for secure transactions.
