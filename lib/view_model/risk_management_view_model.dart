@@ -15,7 +15,7 @@ class RiskManagementViewModel extends ChangeNotifier {
   // Signals for reactive state management
   late final Signal<List<Trade>> _trades;
   late final Signal<RiskManagement> _riskSettings;
-  late final Signal<TradingStatistics?> _statistics;
+  late final Signal<ServiceTradingStatistics?> _statistics;
   late final Signal<RiskStatus> _riskStatus;
   late final Signal<bool> _isLoading;
   late final Signal<String?> _errorMessage;
@@ -37,7 +37,7 @@ class RiskManagementViewModel extends ChangeNotifier {
   void _initializeSignals() {
     _trades = Signal<List<Trade>>([]);
     _riskSettings = Signal<RiskManagement>(_riskService.riskSettings);
-    _statistics = Signal<TradingStatistics?>(null);
+    _statistics = Signal<ServiceTradingStatistics?>(null);
     _riskStatus = Signal<RiskStatus>(RiskStatus.low);
     _isLoading = Signal<bool>(false);
     _errorMessage = Signal<String?>(null);
@@ -54,7 +54,7 @@ class RiskManagementViewModel extends ChangeNotifier {
   // Getters for signals
   Signal<List<Trade>> get trades => _trades;
   Signal<RiskManagement> get riskSettings => _riskSettings;
-  Signal<TradingStatistics?> get statistics => _statistics;
+  Signal<ServiceTradingStatistics?> get statistics => _statistics;
   Signal<RiskStatus> get riskStatus => _riskStatus;
   Signal<bool> get isLoading => _isLoading;
   Signal<String?> get errorMessage => _errorMessage;

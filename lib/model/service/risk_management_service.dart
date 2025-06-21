@@ -1,6 +1,9 @@
 import '../trade.dart';
 import '../risk_management.dart';
 import '../repository/trade_repository.dart';
+import '../../utils/trade_statistics_calculator.dart';
+import '../../utils/error_handling.dart';
+import '../../utils/date_time_utils.dart';
 
 class RiskManagementService {
   final TradeRepository _tradeRepository;
@@ -20,74 +23,95 @@ class RiskManagementService {
 
   /// Add a new trade and validate it against risk parameters
   Future<Trade> addTrade(double result) async {
-    final trade = Trade(id: 0, result: result);
+    return await ErrorHandler.handleServiceOperation('add trade', () async {
+      // Validate trade result
+      final validatedResult = ValidationRules.validateTradeResult(result);
+      final trade = Trade(id: 0, result: validatedResult);
 
-    // Only validate negative trades (losses) against risk limits
-    // Positive trades (profits) have no limit
-    if (result < 0 && !_riskSettings.isTradeWithinRiskLimits(result)) {
-      throw RiskLimitExceededException(
-        'Trade loss amount \$${result.abs().toStringAsFixed(2)} exceeds maximum allowed loss per trade \$${_riskSettings.maxLossPerTrade.toStringAsFixed(2)}',
-      );
-    }
+      // Only validate negative trades (losses) against risk limits
+      // Positive trades (profits) have no limit
+      if (result < 0 && !_riskSettings.isTradeWithinRiskLimits(result)) {
+        throw RiskLimitExceededException(
+          'Trade loss amount \$${result.abs().toStringAsFixed(2)} exceeds maximum allowed loss per trade \$${_riskSettings.maxLossPerTrade.toStringAsFixed(2)}',
+        );
+      }
 
-    // Check if adding this trade would exceed maximum drawdown
-    if (result < 0 && _riskSettings.wouldExceedMaxDrawdown(result)) {
-      final effectiveMaxDrawdown =
-          _riskSettings.isDynamicMaxDrawdown &&
-              _riskSettings.currentBalance > _riskSettings.accountBalance
-          ? _riskSettings.maxDrawdown +
-                (_riskSettings.currentBalance - _riskSettings.accountBalance)
-          : _riskSettings.maxDrawdown;
+      // Check if adding this trade would exceed maximum drawdown
+      if (result < 0 && _riskSettings.wouldExceedMaxDrawdown(result)) {
+        final effectiveMaxDrawdown =
+            _riskSettings.isDynamicMaxDrawdown &&
+                _riskSettings.currentBalance > _riskSettings.accountBalance
+            ? _riskSettings.maxDrawdown +
+                  (_riskSettings.currentBalance - _riskSettings.accountBalance)
+            : _riskSettings.maxDrawdown;
 
-      throw RiskLimitExceededException(
-        'Adding this trade would exceed maximum drawdown limit. Current Balance: \$${_riskSettings.currentBalance.toStringAsFixed(2)}, Effective Max Drawdown: \$${effectiveMaxDrawdown.toStringAsFixed(2)}',
-      );
-    }
+        throw RiskLimitExceededException(
+          'Adding this trade would exceed maximum drawdown limit. Current Balance: \$${_riskSettings.currentBalance.toStringAsFixed(2)}, Effective Max Drawdown: \$${effectiveMaxDrawdown.toStringAsFixed(2)}',
+        );
+      }
 
-    // Add the trade and update current balance in risk settings
-    final addedTrade = await _tradeRepository.addTrade(trade);
-    _riskSettings = _riskSettings.updateBalance(result);
+      // Add the trade and update current balance in risk settings
+      final addedTrade = await _tradeRepository.addTrade(trade);
+      _riskSettings = _riskSettings.updateBalance(result);
 
-    return addedTrade;
+      return addedTrade;
+    }, context: 'RiskManagementService');
   }
 
   /// Get all trades
   Future<List<Trade>> getAllTrades() async {
-    return await _tradeRepository.getAllTrades();
+    return await ErrorHandler.handleServiceOperation(
+      'get all trades',
+      () async {
+        return await _tradeRepository.getAllTrades();
+      },
+      context: 'RiskManagementService',
+    );
   }
 
   /// Get comprehensive trading statistics
-  Future<TradingStatistics> getTradingStatistics() async {
-    final trades = await _tradeRepository.getAllTrades();
-    final totalPnL = await _tradeRepository.getTotalPnL();
-    final winCount = await _tradeRepository.getWinCount();
-    final lossCount = await _tradeRepository.getLossCount();
-    final winRate = await _tradeRepository.getWinRate();
-    final averageWin = await _tradeRepository.getAverageWin();
-    final averageLoss = await _tradeRepository.getAverageLoss();
+  Future<ServiceTradingStatistics> getTradingStatistics() async {
+    return await ErrorHandler.handleServiceOperation(
+      'get trading statistics',
+      () async {
+        final trades = await _tradeRepository.getAllTrades();
 
-    return TradingStatistics(
-      totalTrades: trades.length,
-      totalPnL: totalPnL,
-      currentDrawdown: _riskSettings.currentDrawdownAmount,
-      maxAllowedDrawdown:
-          _riskSettings.isDynamicMaxDrawdown &&
-              _riskSettings.currentBalance > _riskSettings.accountBalance
-          ? _riskSettings.maxDrawdown +
-                (_riskSettings.currentBalance - _riskSettings.accountBalance)
-          : _riskSettings.maxDrawdown,
-      winCount: winCount,
-      lossCount: lossCount,
-      winRate: winRate,
-      averageWin: averageWin,
-      averageLoss: averageLoss,
-      remainingRiskCapacity: _riskSettings.remainingRiskCapacity,
-      maxLossPerTrade: _riskSettings.maxLossPerTrade,
-      riskRewardRatio: averageLoss != 0 ? averageWin / averageLoss.abs() : 0,
-      requiredWinRate: _riskSettings.calculateRequiredWinRate(
-        averageWin,
-        averageLoss.abs(),
-      ),
+        // Use the utility to calculate basic statistics efficiently
+        final basicStats = TradeStatisticsCalculator.calculateAllStatistics(
+          trades,
+        );
+
+        // Calculate risk-specific metrics
+        final maxAllowedDrawdown =
+            _riskSettings.isDynamicMaxDrawdown &&
+                _riskSettings.currentBalance > _riskSettings.accountBalance
+            ? _riskSettings.maxDrawdown +
+                  (_riskSettings.currentBalance - _riskSettings.accountBalance)
+            : _riskSettings.maxDrawdown;
+
+        return ServiceTradingStatistics(
+          totalTrades: basicStats.totalTrades,
+          totalPnL: basicStats.totalPnL,
+          currentDrawdown: _riskSettings.currentDrawdownAmount,
+          maxAllowedDrawdown: maxAllowedDrawdown,
+          winCount: basicStats.winCount,
+          lossCount: basicStats.lossCount,
+          winRate: basicStats.winRate,
+          averageWin: basicStats.averageWin,
+          averageLoss: basicStats.averageLoss,
+          remainingRiskCapacity: _riskSettings.remainingRiskCapacity,
+          maxLossPerTrade: _riskSettings.maxLossPerTrade,
+          riskRewardRatio: basicStats.riskRewardRatio,
+          requiredWinRate: _riskSettings.calculateRequiredWinRate(
+            basicStats.averageWin,
+            basicStats.averageLoss.abs(),
+          ),
+          bestWin: basicStats.bestWin,
+          worstLoss: basicStats.worstLoss,
+          profitFactor: basicStats.profitFactor,
+        );
+      },
+      context: 'RiskManagementService',
     );
   }
 
@@ -113,41 +137,80 @@ class RiskManagementService {
 
   /// Clear all trades
   Future<void> clearAllTrades() async {
-    await _tradeRepository.clearAllTrades();
-    // Reset balance to initial account balance
-    _riskSettings = _riskSettings.copyWith(
-      currentBalance: _riskSettings.accountBalance,
+    return await ErrorHandler.handleServiceOperation(
+      'clear all trades',
+      () async {
+        await _tradeRepository.clearAllTrades();
+        // Reset balance to initial account balance
+        _riskSettings = _riskSettings.copyWith(
+          currentBalance: _riskSettings.accountBalance,
+        );
+      },
+      context: 'RiskManagementService',
     );
   }
 
   /// Get trades within a specific date range
   Future<List<Trade>> getTradesByDateRange(DateTime start, DateTime end) async {
-    return await _tradeRepository.getTradesByDateRange(start, end);
+    return await ErrorHandler.handleServiceOperation(
+      'get trades by date range',
+      () async {
+        // Validate date range
+        if (!DateTimeUtils.isValidDateRange(start, end)) {
+          throw ValidationException(
+            'Invalid date range: start date must be before or equal to end date',
+          );
+        }
+
+        return await _tradeRepository.getTradesByDateRange(start, end);
+      },
+      context: 'RiskManagementService',
+    );
   }
 
   /// Validate risk settings
   bool validateRiskSettings(RiskManagement settings) {
-    return settings.maxDrawdown >= 0 &&
-        settings.maxDrawdown <= settings.accountBalance &&
-        settings.lossPerTradePercentage > 0 &&
-        settings.lossPerTradePercentage <= 100 &&
-        settings.accountBalance >= 0;
+    try {
+      ValidationRules.validateAccountBalance(settings.accountBalance);
+      ValidationRules.validateMaxDrawdown(
+        settings.maxDrawdown,
+        settings.accountBalance,
+      );
+      ValidationRules.validateLossPercentage(settings.lossPerTradePercentage);
+      return true;
+    } catch (e) {
+      ErrorHandler.logError(
+        'RiskManagementService',
+        e,
+        additionalInfo: 'Risk settings validation',
+      );
+      return false;
+    }
   }
 
   /// Initialize current balance from repository data
   Future<void> initializeCurrentBalance() async {
-    final totalPnL = await _tradeRepository.getTotalPnL();
-    final currentBalance = _riskSettings.accountBalance + totalPnL;
-    _riskSettings = _riskSettings.copyWith(currentBalance: currentBalance);
+    return await ErrorHandler.handleServiceOperation(
+      'initialize current balance',
+      () async {
+        final totalPnL = await _tradeRepository.getTotalPnL();
+        final currentBalance = _riskSettings.accountBalance + totalPnL;
+        _riskSettings = _riskSettings.copyWith(currentBalance: currentBalance);
+      },
+      context: 'RiskManagementService',
+    );
   }
 
   /// Get total P&L from all trades
   Future<double> getTotalPnL() async {
-    return await _tradeRepository.getTotalPnL();
+    return await ErrorHandler.handleServiceOperation('get total PnL', () async {
+      return await _tradeRepository.getTotalPnL();
+    }, context: 'RiskManagementService');
   }
 }
 
-class TradingStatistics {
+/// Extended trading statistics that includes risk management specific data
+class ServiceTradingStatistics {
   final int totalTrades;
   final double totalPnL;
   final double currentDrawdown;
@@ -161,8 +224,11 @@ class TradingStatistics {
   final double maxLossPerTrade;
   final double riskRewardRatio;
   final double requiredWinRate;
+  final double bestWin;
+  final double worstLoss;
+  final double profitFactor;
 
-  TradingStatistics({
+  const ServiceTradingStatistics({
     required this.totalTrades,
     required this.totalPnL,
     required this.currentDrawdown,
@@ -176,14 +242,38 @@ class TradingStatistics {
     required this.maxLossPerTrade,
     required this.riskRewardRatio,
     required this.requiredWinRate,
+    required this.bestWin,
+    required this.worstLoss,
+    required this.profitFactor,
   });
+
+  @override
+  String toString() {
+    return 'ServiceTradingStatistics('
+        'totalTrades: $totalTrades, '
+        'totalPnL: ${totalPnL.toStringAsFixed(2)}, '
+        'winRate: ${winRate.toStringAsFixed(1)}%, '
+        'profitFactor: ${profitFactor.toStringAsFixed(2)}, '
+        'riskRewardRatio: ${riskRewardRatio.toStringAsFixed(2)}'
+        ')';
+  }
 }
 
 enum RiskStatus { low, medium, high, critical }
 
-class RiskLimitExceededException implements Exception {
-  final String message;
-  RiskLimitExceededException(this.message);
+/// Risk-specific exception that extends the common ServiceException
+class RiskLimitExceededException extends ServiceException {
+  const RiskLimitExceededException(
+    String message, {
+    String? code,
+    dynamic originalError,
+    StackTrace? stackTrace,
+  }) : super(
+         message,
+         code: code ?? 'RISK_LIMIT_EXCEEDED',
+         originalError: originalError,
+         stackTrace: stackTrace,
+       );
 
   @override
   String toString() => 'RiskLimitExceededException: $message';
