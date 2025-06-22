@@ -43,8 +43,8 @@ class RiskManagementViewModel extends ChangeNotifier {
     _errorMessage = Signal<String?>(null);
 
     // Initialize input fields with current values for better UX
-    _maxDrawdownInput = Signal<String>('0.00');
-    _lossPerTradeInput = Signal<String>('0');
+    _maxDrawdownInput = Signal<String>('');
+    _lossPerTradeInput = Signal<String>('');
     _tradeResultInput = Signal<String>('');
 
     // Validate initial settings

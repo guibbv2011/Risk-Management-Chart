@@ -16,7 +16,7 @@ class _TradeChartWidgetState extends State<TradeChartWidget> with SignalsMixin {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(8.0),
+      padding: const EdgeInsets.fromLTRB(8.0, 0, 8.0, 0),
       child: Watch((_) {
         final chartData = widget.viewModel.chartData;
 
@@ -54,30 +54,17 @@ class _TradeChartWidgetState extends State<TradeChartWidget> with SignalsMixin {
             ),
             interval: 1,
             minimum: 0,
-            title: AxisTitle(
-              text: 'Trade Number (0 = Starting Point)',
-              textStyle: TextStyle(color: Colors.white70),
-            ),
-            labelStyle: TextStyle(color: Colors.white70),
             axisLine: AxisLine(color: Colors.grey),
           ),
           primaryYAxis: NumericAxis(
             axisLine: const AxisLine(width: 1, color: Colors.grey),
             enableAutoIntervalOnZooming: true,
-            edgeLabelPlacement: EdgeLabelPlacement.shift,
-            labelFormat: '\${value}',
             majorTickLines: const MajorTickLines(size: 0),
             majorGridLines: const MajorGridLines(
               width: 0.5,
               color: Colors.grey,
               dashArray: [2, 2],
             ),
-
-            title: const AxisTitle(
-              text: 'Cumulative P&L',
-              textStyle: TextStyle(color: Colors.white70),
-            ),
-            labelStyle: const TextStyle(color: Colors.white70),
             plotBands: _buildPlotBands(),
           ),
           series: _buildTradeDataSeries(chartData),
@@ -111,8 +98,6 @@ class _TradeChartWidgetState extends State<TradeChartWidget> with SignalsMixin {
         borderColor: Colors.white,
         borderWidth: 1,
         dashArray: const [5, 5],
-        text: 'Break Even',
-        textStyle: const TextStyle(color: Colors.white70, fontSize: 10),
       ),
     ];
   }
