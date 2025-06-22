@@ -16,9 +16,17 @@ class _TradeListWidgetState extends State<TradeListWidget> with SignalsMixin {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16.0),
+      height: MediaQuery.of(context).size.height,
+      padding: const EdgeInsets.all(12.0),
+      constraints: BoxConstraints(
+        minHeight: MediaQuery.of(context).size.height,
+        maxHeight: MediaQuery.of(context).size.height,
+      ),
+
+      // color: Colors.amber,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        // mainAxisSize: MainAxisSize.max,
         children: [
           // Header
           Row(
@@ -61,12 +69,14 @@ class _TradeListWidgetState extends State<TradeListWidget> with SignalsMixin {
                     return _buildInitialBalanceRow(riskSettings.accountBalance);
                   }
 
-                  // Trade rows (starting from index 1, but showing trade at index-1)
-                  final trade = trades[index - 1];
-                  final tradeNumber = index; // This will be 1, 2, 3, etc.
+                  // Trade rows - show in reverse order (latest first)
+                  final tradeIndex = trades.length - index; // Reverse the index
+                  final trade = trades[tradeIndex];
+                  final tradeNumber =
+                      tradeIndex + 1; // Chronological trade number
                   final runningBalance = _calculateRunningBalance(
                     trades,
-                    index - 1,
+                    tradeIndex,
                     riskSettings.accountBalance,
                   );
 
@@ -74,7 +84,7 @@ class _TradeListWidgetState extends State<TradeListWidget> with SignalsMixin {
                     trade: trade,
                     tradeNumber: tradeNumber,
                     runningBalance: runningBalance,
-                    isLatest: index == trades.length,
+                    isLatest: index == 1, // First displayed trade is the latest
                   );
                 },
               );

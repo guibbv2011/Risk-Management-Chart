@@ -38,6 +38,7 @@ class _HomeViewState extends State<HomeView> with SignalsMixin {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
+      resizeToAvoidBottomInset: false,
 
       appBar: AppBar(
         backgroundColor: Colors.black,
@@ -215,46 +216,43 @@ class _HomeViewState extends State<HomeView> with SignalsMixin {
             return const Text('Loading statistics...');
           }
 
-          return SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildStatRow('Total Trades', '${stats.totalTrades}'),
-                _buildStatRow(
-                  'Total P&L',
-                  '${stats.totalPnL.toStringAsFixed(2)}',
-                ),
-                _buildStatRow(
-                  'Win Rate',
-                  '${stats.winRate.toStringAsFixed(1)}%',
-                ),
-                _buildStatRow(
-                  'Current Drawdown',
-                  '${stats.currentDrawdown.toStringAsFixed(2)}',
-                ),
-                _buildStatRow(
-                  'Max Allowed Drawdown',
-                  '${stats.maxAllowedDrawdown.toStringAsFixed(2)}',
-                ),
-                _buildStatRow(
-                  'Remaining Risk',
-                  '${stats.remainingRiskCapacity.toStringAsFixed(2)}',
-                ),
-                _buildStatRow(
-                  'Average Win',
-                  '${stats.averageWin.toStringAsFixed(2)}',
-                ),
-                _buildStatRow(
-                  'Average Loss',
-                  '${stats.averageLoss.toStringAsFixed(2)}',
-                ),
-                _buildStatRow(
-                  'Risk/Reward Ratio',
-                  '${stats.riskRewardRatio.toStringAsFixed(2)}',
-                ),
-              ],
-            ),
+          return //SingleChildScrollView(child:
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildStatRow('Total Trades', '${stats.totalTrades}'),
+              _buildStatRow(
+                'Total P&L',
+                '${stats.totalPnL.toStringAsFixed(2)}',
+              ),
+              _buildStatRow('Win Rate', '${stats.winRate.toStringAsFixed(1)}%'),
+              _buildStatRow(
+                'Current Drawdown',
+                '${stats.currentDrawdown.toStringAsFixed(2)}',
+              ),
+              _buildStatRow(
+                'Max Allowed Drawdown',
+                '${stats.maxAllowedDrawdown.toStringAsFixed(2)}',
+              ),
+              _buildStatRow(
+                'Remaining Risk',
+                '${stats.remainingRiskCapacity.toStringAsFixed(2)}',
+              ),
+              _buildStatRow(
+                'Average Win',
+                '${stats.averageWin.toStringAsFixed(2)}',
+              ),
+              _buildStatRow(
+                'Average Loss',
+                '${stats.averageLoss.toStringAsFixed(2)}',
+              ),
+              _buildStatRow(
+                'Risk/Reward Ratio',
+                '${stats.riskRewardRatio.toStringAsFixed(2)}',
+              ),
+            ],
+            // ),
           );
         }),
         actions: [
@@ -346,7 +344,6 @@ class _HomeViewState extends State<HomeView> with SignalsMixin {
       children: [
         // Chart widget (top half)
         Expanded(flex: 2, child: TradeChartWidget(viewModel: widget.viewModel)),
-
         // Trade list widget (bottom half)
         Expanded(flex: 2, child: TradeListWidget(viewModel: widget.viewModel)),
 
