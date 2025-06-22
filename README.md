@@ -111,27 +111,27 @@ The app now features a unified storage system that works seamlessly across all p
 ### Automatic Data Persistence
 The app automatically:
 - Saves all trades and settings when modified
-- Loads existing data on app startup  
+- Loads existing data on app startup
 - Maintains data across browser sessions (web)
 - Stores data locally on device (mobile/desktop)
 
 For detailed implementation guide, see [INDEXEDDB_STORAGE.md](INDEXEDDB_STORAGE.md)
 
 TODO:
-  Free Version:
-    - [x] - Add data dynamically, from the floating action button, which opens a text entry.
-    - [ ] - Zoom in/out on the X and Y axes.
-    - [ ] - Select range for visualization.
-    - [x] - Store data on the local disk automatically.
-            - Native storage implementation [x]
-            - Mobile storage implementation [x] 
-            - Web storage implementation [x] - IndexedDB implementation completed
-              - Automatic persistent storage using IndexedDB on web
-              - Unified API with SQLite on native platforms
-              - All user data automatically saved and loaded
-  Paid Version:
-    - [ ] - Add subscription model for premium users.
-    - [ ] - Integrate payment gateway for secure transactions.
-    - [ ] - Sign in with Google or X.
-    - [ ] - Connect to brokers, our app will handle multiple accounts of all connected brokers.
-    - [ ] - Implement advanced risk management strategies like realtime tracking of opened positions, daily loss, daily profit, and trailing stops.
+
+Free Version:
+- [x] - Add data dynamically, from the floating action button, which opens a text entry.
+- [ ] - Zoom in/out on the X and Y axes.
+- [ ] - Select range for visualization.
+- [x] - Store data on the local disk automatically.
+      - Native storage implementation
+      - Mobile storage implementation
+      - Web storage implementation
+      - All user data automatically saved and loaded
+
+Paid Version:
+- [ ] - Add subscription model for premium users.
+- [ ] - Integrate payment gateway for secure transactions.
+- [ ] - Sign in with Google or X.
+- [ ] - Connect to brokers, our app will handle multiple accounts of all connected brokers.
+- [ ] - Implement advanced risk management strategies like realtime tracking of opened positions, daily loss, daily profit, and trailing stops.
