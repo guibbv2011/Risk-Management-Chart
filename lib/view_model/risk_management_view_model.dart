@@ -98,6 +98,45 @@ class RiskManagementViewModel extends ChangeNotifier {
     return data;
   }
 
+  List<ChartData> get drawdownChartData {
+    final tradesList = _trades.value;
+    List<ChartData> data = [];
+    data.add(ChartData(0, -riskSettings.value.maxDrawdown));
+    if (tradesList.isEmpty) {
+      debugPrint('   No trades - returning starting point only for drawdown');
+      return data;
+    }
+    double currentDD = -riskSettings.value.maxDrawdown;
+    double runningTotal = 0.0;
+    final maxDD = riskSettings.value.maxDrawdown;
+    final isDynamic = riskSettings.value.isDynamicMaxDrawdown;
+    for (int i = 0; i < tradesList.length; i++) {
+      runningTotal += tradesList[i].result;
+      final result = tradesList[i].result;
+      if (result < 0) {
+        data.add(ChartData(i + 1, currentDD));
+        debugPrint('   Trade ${i + 1}: Loss - Drawdown remains ${currentDD.toStringAsFixed(2)}');
+      } else {
+        final distance = runningTotal - currentDD;
+        debugPrint('   Trade ${i + 1}: Profit - Distance: ${distance.toStringAsFixed(2)}');
+        if (distance >= maxDD) {
+          double newDD = runningTotal - maxDD;
+          if (!isDynamic && newDD > 0) {
+            newDD = 0;
+          }
+          currentDD = newDD;
+          data.add(ChartData(i + 1, currentDD));
+          debugPrint('     Updated Drawdown to ${currentDD.toStringAsFixed(2)}');
+        } else {
+          data.add(ChartData(i + 1, currentDD));
+          debugPrint('     Drawdown unchanged');
+        }
+      }
+    }
+    debugPrint('   Final drawdown chart data: ${data.length} points');
+    return data;
+  }
+
   Future<void> _loadInitialData() async {
     try {
       _isLoading.value = true;
@@ -351,6 +390,7 @@ class RiskManagementViewModel extends ChangeNotifier {
         maxDrawdown: maxDrawdown,
         isDynamicMaxDrawdown:
             isDynamicEnabled ?? _riskSettings.value.isDynamicMaxDrawdown,
+        currentDrawdownThreshold: -maxDrawdown,
       );
 
       if (_riskService.validateRiskSettings(newSettings)) {

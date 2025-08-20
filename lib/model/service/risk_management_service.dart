@@ -53,7 +53,18 @@ class RiskManagementService {
       // Add the trade and update current balance in risk settings
       final addedTrade = await _tradeRepository.addTrade(trade);
       _riskSettings = _riskSettings.updateBalance(result);
-
+      if (result >= 0) {
+        final cumulativePnL = _riskSettings.currentBalance - _riskSettings.accountBalance;
+        final currentDD = _riskSettings.currentDrawdownThreshold;
+        final distance = cumulativePnL - currentDD;
+        if (distance >= _riskSettings.maxDrawdown) {
+          double newDD = cumulativePnL - _riskSettings.maxDrawdown;
+          if (!_riskSettings.isDynamicMaxDrawdown && newDD > 0) {
+            newDD = 0;
+          }
+          _riskSettings = _riskSettings.copyWith(currentDrawdownThreshold: newDD);
+        }
+      }
       return addedTrade;
     }, context: 'RiskManagementService');
   }
@@ -122,13 +133,18 @@ class RiskManagementService {
 
   /// Check if account is approaching risk limits
   Future<RiskStatus> checkRiskStatus() async {
-    final remainingRisk = _riskSettings.remainingRiskCapacity;
-
-    if (remainingRisk <= 0) {
+    final cumulativePnL = _riskSettings.currentBalance - _riskSettings.accountBalance;
+    final distance = cumulativePnL - _riskSettings.currentDrawdownThreshold;
+    final maxDD = _riskSettings.maxDrawdown;
+    if (maxDD == 0) {
+      return RiskStatus.low;
+    }
+    final ratio = distance / maxDD;
+    if (ratio <= 0) {
       return RiskStatus.critical;
-    } else if (remainingRisk <= _riskSettings.maxDrawdown * 0.2) {
+    } else if (ratio <= 0.2) {
       return RiskStatus.high;
-    } else if (remainingRisk <= _riskSettings.maxDrawdown * 0.5) {
+    } else if (ratio <= 0.5) {
       return RiskStatus.medium;
     } else {
       return RiskStatus.low;
@@ -144,6 +160,7 @@ class RiskManagementService {
         // Reset balance to initial account balance
         _riskSettings = _riskSettings.copyWith(
           currentBalance: _riskSettings.accountBalance,
+          currentDrawdownThreshold: -_riskSettings.maxDrawdown,
         );
       },
       context: 'RiskManagementService',

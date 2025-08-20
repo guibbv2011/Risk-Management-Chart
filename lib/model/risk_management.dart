@@ -4,6 +4,7 @@ class RiskManagement {
   final double accountBalance;
   final double currentBalance;
   final bool isDynamicMaxDrawdown;
+  final double currentDrawdownThreshold;
 
   RiskManagement({
     required this.maxDrawdown,
@@ -11,7 +12,9 @@ class RiskManagement {
     required this.accountBalance,
     double? currentBalance,
     this.isDynamicMaxDrawdown = false,
-  }) : currentBalance = currentBalance ?? accountBalance;
+    double? currentDrawdownThreshold,
+  })  : currentBalance = currentBalance ?? accountBalance,
+        currentDrawdownThreshold = currentDrawdownThreshold ?? -maxDrawdown;
 
   /// Calculate maximum loss per trade based on percentage of remaining risk capacity
   double get maxLossPerTrade {
@@ -101,6 +104,7 @@ class RiskManagement {
     double? accountBalance,
     double? currentBalance,
     bool? isDynamicMaxDrawdown,
+    double? currentDrawdownThreshold,
   }) {
     return RiskManagement(
       maxDrawdown: maxDrawdown ?? this.maxDrawdown,
@@ -109,6 +113,7 @@ class RiskManagement {
       accountBalance: accountBalance ?? this.accountBalance,
       currentBalance: currentBalance ?? this.currentBalance,
       isDynamicMaxDrawdown: isDynamicMaxDrawdown ?? this.isDynamicMaxDrawdown,
+      currentDrawdownThreshold: currentDrawdownThreshold ?? this.currentDrawdownThreshold,
     );
   }
 
@@ -119,17 +124,20 @@ class RiskManagement {
       'accountBalance': accountBalance,
       'currentBalance': currentBalance,
       'isDynamicMaxDrawdown': isDynamicMaxDrawdown,
+      'currentDrawdownThreshold': currentDrawdownThreshold,
     };
   }
 
   factory RiskManagement.fromJson(Map<String, dynamic> json) {
+    final maxDD = (json['maxDrawdown'] as num).toDouble();
     return RiskManagement(
-      maxDrawdown: (json['maxDrawdown'] as num).toDouble(),
+      maxDrawdown: maxDD,
       lossPerTradePercentage: (json['lossPerTradePercentage'] as num)
           .toDouble(),
       accountBalance: (json['accountBalance'] as num).toDouble(),
       currentBalance: (json['currentBalance'] as num?)?.toDouble(),
       isDynamicMaxDrawdown: json['isDynamicMaxDrawdown'] as bool? ?? false,
+      currentDrawdownThreshold: (json['currentDrawdownThreshold'] as num?)?.toDouble() ?? -maxDD,
     );
   }
 
@@ -141,7 +149,8 @@ class RiskManagement {
         other.lossPerTradePercentage == lossPerTradePercentage &&
         other.accountBalance == accountBalance &&
         other.currentBalance == currentBalance &&
-        other.isDynamicMaxDrawdown == isDynamicMaxDrawdown;
+        other.isDynamicMaxDrawdown == isDynamicMaxDrawdown &&
+        other.currentDrawdownThreshold == currentDrawdownThreshold;
   }
 
   @override
@@ -151,6 +160,7 @@ class RiskManagement {
         accountBalance,
         currentBalance,
         isDynamicMaxDrawdown,
+        currentDrawdownThreshold,
       );
 
   @override

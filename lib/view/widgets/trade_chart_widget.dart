@@ -19,7 +19,7 @@ class _TradeChartWidgetState extends State<TradeChartWidget> with SignalsMixin {
       padding: const EdgeInsets.fromLTRB(8.0, 0, 8.0, 0),
       child: Watch((_) {
         final chartData = widget.viewModel.chartData;
-
+        final drawdownData = widget.viewModel.drawdownChartData;
         return SfCartesianChart(
           backgroundColor: Colors.black,
           title: ChartTitle(
@@ -67,7 +67,7 @@ class _TradeChartWidgetState extends State<TradeChartWidget> with SignalsMixin {
             ),
             plotBands: _buildPlotBands(),
           ),
-          series: _buildTradeDataSeries(chartData),
+          series: _buildTradeDataSeries(chartData, drawdownData),
           tooltipBehavior: TooltipBehavior(
             enable: true,
             canShowMarker: true,
@@ -103,13 +103,14 @@ class _TradeChartWidgetState extends State<TradeChartWidget> with SignalsMixin {
   }
 
   List<SplineSeries<ChartData, int>> _buildTradeDataSeries(
-    List<ChartData> data,
+    List<ChartData> pnlData,
+    List<ChartData> ddData,
   ) {
     return [
       SplineSeries<ChartData, int>(
         name: 'P&L',
         enableTrackball: true,
-        dataSource: data,
+        dataSource: pnlData,
         xValueMapper: (ChartData data, int index) => data.x,
         yValueMapper: (ChartData data, int index) => data.y,
         markerSettings: const MarkerSettings(
@@ -125,7 +126,7 @@ class _TradeChartWidgetState extends State<TradeChartWidget> with SignalsMixin {
         width: 2,
         splineType: SplineType.natural,
         cardinalSplineTension: 0.5,
-        dataLabelSettings: data.length <= 20
+        dataLabelSettings: pnlData.length <= 20
             ? const DataLabelSettings(
                 isVisible: true,
                 labelAlignment: ChartDataLabelAlignment.auto,
@@ -133,7 +134,35 @@ class _TradeChartWidgetState extends State<TradeChartWidget> with SignalsMixin {
                 labelIntersectAction: LabelIntersectAction.hide,
               )
             : const DataLabelSettings(isVisible: false),
-
+        animationDuration: 1000,
+      ),
+      SplineSeries<ChartData, int>(
+        name: 'Drawdown',
+        enableTrackball: true,
+        dataSource: ddData,
+        xValueMapper: (ChartData data, int index) => data.x,
+        yValueMapper: (ChartData data, int index) => data.y,
+        markerSettings: const MarkerSettings(
+          isVisible: true,
+          height: 6,
+          width: 6,
+          shape: DataMarkerType.circle,
+          borderColor: Colors.redAccent,
+          borderWidth: 2,
+          color: Colors.black,
+        ),
+        color: Colors.redAccent,
+        width: 2,
+        splineType: SplineType.natural,
+        cardinalSplineTension: 0.5,
+        dataLabelSettings: ddData.length <= 20
+            ? const DataLabelSettings(
+                isVisible: true,
+                labelAlignment: ChartDataLabelAlignment.auto,
+                textStyle: TextStyle(color: Colors.white70, fontSize: 10),
+                labelIntersectAction: LabelIntersectAction.hide,
+              )
+            : const DataLabelSettings(isVisible: false),
         animationDuration: 1000,
       ),
     ];
