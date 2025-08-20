@@ -8,12 +8,9 @@ import 'web_storage_init.dart';
 import '../../utils/error_handling.dart';
 import '../../utils/date_time_utils.dart';
 
-// Conditional import for path_provider
 import 'package:path_provider/path_provider.dart'
     if (dart.library.html) 'sqlite_web_stub.dart';
 
-/// SQLite implementation for trade data storage
-/// Works across Android, iOS, Linux, Windows (Web uses IndexedDB through sqflite_common_ffi_web)
 class SqliteTradeStorage implements TradeStorage {
   static const String _databaseName = 'risk_management.db';
   static const int _databaseVersion = 1;
@@ -21,7 +18,6 @@ class SqliteTradeStorage implements TradeStorage {
 
   Database? _database;
 
-  /// Get database instance, creating it if necessary
   Future<Database> get database async {
     _database ??= await _initializeDatabase();
     return _database!;
@@ -29,12 +25,10 @@ class SqliteTradeStorage implements TradeStorage {
 
   @override
   Future<void> initializeDatabase() async {
-    // Ensure platform-specific storage is initialized
     await StorageInitializer.initialize();
     _database = await _initializeDatabase();
   }
 
-  /// Initialize the database
   Future<Database> _initializeDatabase() async {
     return await ErrorHandler.handleStorageOperation(
       'initialize database',
@@ -42,13 +36,9 @@ class SqliteTradeStorage implements TradeStorage {
         String path;
 
         if (kIsWeb) {
-          // For web, use a simple database name - sqflite_common_ffi_web handles the rest
           path = _databaseName;
-          debugPrint('Web database path: $path');
         } else {
-          // Get platform-specific path for native platforms
           path = await _getNativeDatabasePath();
-          debugPrint('Native database path: $path');
         }
 
         final database = await openDatabase(
@@ -58,19 +48,14 @@ class SqliteTradeStorage implements TradeStorage {
           onUpgrade: _onUpgrade,
         );
 
-        debugPrint(
-          'Database opened successfully on ${StorageInitializer.getPlatformInfo()}',
-        );
         return database;
       },
       context: 'SqliteTradeStorage',
     );
   }
 
-  /// Get database path for native platforms (non-web)
   Future<String> _getNativeDatabasePath() async {
     try {
-      // Use different strategies based on platform
       switch (defaultTargetPlatform) {
         case TargetPlatform.android:
         case TargetPlatform.iOS:
@@ -78,7 +63,6 @@ class SqliteTradeStorage implements TradeStorage {
             final documentsDirectory = await getApplicationDocumentsDirectory();
             return join(documentsDirectory.path, _databaseName);
           } catch (e) {
-            debugPrint('getApplicationDocumentsDirectory failed: $e');
             return join(await getDatabasesPath(), _databaseName);
           }
 
@@ -89,7 +73,6 @@ class SqliteTradeStorage implements TradeStorage {
             final supportDirectory = await getApplicationSupportDirectory();
             return join(supportDirectory.path, _databaseName);
           } catch (e) {
-            debugPrint('getApplicationSupportDirectory failed: $e');
             return join(await getDatabasesPath(), _databaseName);
           }
 
@@ -97,13 +80,10 @@ class SqliteTradeStorage implements TradeStorage {
           return join(await getDatabasesPath(), _databaseName);
       }
     } catch (e) {
-      // Final fallback
-      debugPrint('All path methods failed, using database path: $e');
       return join(await getDatabasesPath(), _databaseName);
     }
   }
 
-  /// Create database tables
   Future<void> _onCreate(Database db, int version) async {
     await db.execute('''
       CREATE TABLE $_tradesTable (
@@ -115,7 +95,6 @@ class SqliteTradeStorage implements TradeStorage {
       )
     ''');
 
-    // Create indexes for better performance
     await db.execute('''
       CREATE INDEX idx_trades_timestamp ON $_tradesTable(timestamp)
     ''');
@@ -123,17 +102,10 @@ class SqliteTradeStorage implements TradeStorage {
     await db.execute('''
       CREATE INDEX idx_trades_result ON $_tradesTable(result)
     ''');
-
-    debugPrint('Database tables created successfully');
   }
 
-  /// Handle database upgrades
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    debugPrint('Upgrading database from version $oldVersion to $newVersion');
-    // Handle future database migrations here
     if (oldVersion < 2) {
-      // Example migration for version 2
-      // await db.execute('ALTER TABLE $_tradesTable ADD COLUMN new_column TEXT');
     }
   }
 
@@ -269,14 +241,12 @@ class SqliteTradeStorage implements TradeStorage {
     );
   }
 
-  /// Get trade statistics directly from database
   Future<Map<String, dynamic>> getTradeStatistics() async {
     return await ErrorHandler.handleStorageOperation(
       'get trade statistics',
       () async {
         final db = await database;
 
-        // Get basic counts and sums
         final List<Map<String, dynamic>> results = await db.rawQuery('''
           SELECT
             COUNT(*) as total_trades,
@@ -296,7 +266,6 @@ class SqliteTradeStorage implements TradeStorage {
     );
   }
 
-  /// Get trades count
   @override
   Future<int> getTradesCount() async {
     return await ErrorHandler.handleStorageOperation(
@@ -312,7 +281,6 @@ class SqliteTradeStorage implements TradeStorage {
     );
   }
 
-  /// Get recent trades
   @override
   Future<List<Trade>> getRecentTrades({int limit = 10}) async {
     return await ErrorHandler.handleStorageOperation(
@@ -331,7 +299,6 @@ class SqliteTradeStorage implements TradeStorage {
     );
   }
 
-  /// Export trades to JSON format
   @override
   Future<List<Map<String, dynamic>>> exportTrades() async {
     return await ErrorHandler.handleStorageOperation('export trades', () async {
@@ -340,7 +307,6 @@ class SqliteTradeStorage implements TradeStorage {
     }, context: 'SqliteTradeStorage');
   }
 
-  /// Import trades from JSON format
   @override
   Future<void> importTrades(List<Map<String, dynamic>> tradesData) async {
     return await ErrorHandler.handleStorageOperation('import trades', () async {
@@ -369,7 +335,6 @@ class SqliteTradeStorage implements TradeStorage {
     }
   }
 
-  /// Convert database map to Trade object
   Trade _tradeFromMap(Map<String, dynamic> map) {
     return Trade(
       id: map['id'] as int?,

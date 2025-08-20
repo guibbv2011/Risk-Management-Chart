@@ -72,16 +72,15 @@ class _SettingsScreenState extends State<SettingsScreen> with SignalsMixin {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Status message
                   if (_statusMessage != null)
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(12),
                       margin: const EdgeInsets.only(bottom: 16),
                       decoration: BoxDecoration(
-                        color: Colors.red.withOpacity(0.1),
+                        color: Colors.red.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.red.withOpacity(0.3)),
+                        border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
                       ),
                       child: Text(
                         _statusMessage!,
@@ -89,31 +88,26 @@ class _SettingsScreenState extends State<SettingsScreen> with SignalsMixin {
                       ),
                     ),
 
-                  // Storage Information Section
                   _buildSectionHeader('Storage Information'),
                   _buildStorageInfoCard(),
 
                   const SizedBox(height: 24),
 
-                  // Risk Settings Section
                   _buildSectionHeader('Risk Settings'),
                   _buildRiskSettingsCard(),
 
                   const SizedBox(height: 24),
 
-                  // Debug Section
                   _buildSectionHeader('Debug Tools'),
                   _buildDebugCard(),
 
                   const SizedBox(height: 24),
 
-                  // Data Management Section
                   _buildSectionHeader('Data Management'),
                   _buildDataManagementCard(),
 
                   const SizedBox(height: 24),
 
-                  // Export/Import Section
                   _buildSectionHeader('Backup & Restore'),
                   _buildBackupRestoreCard(),
                 ],
@@ -478,10 +472,8 @@ class _SettingsScreenState extends State<SettingsScreen> with SignalsMixin {
         _statusMessage = 'Preparing export...';
       });
 
-      // Get data from storage
       final rawData = await AppStorageManager.instance.exportAllData();
 
-      // Create export data object
       final exportData = ExportData(
         version: rawData['version'] as String,
         exportDate: DateTime.parse(rawData['exportDate'] as String),
@@ -494,7 +486,6 @@ class _SettingsScreenState extends State<SettingsScreen> with SignalsMixin {
         _statusMessage = 'Saving file...';
       });
 
-      // Export to file
       final success = await _fileService.exportData(exportData);
 
       if (success) {
@@ -530,11 +521,9 @@ class _SettingsScreenState extends State<SettingsScreen> with SignalsMixin {
         _statusMessage = 'Selecting file...';
       });
 
-      // Pick and read file
       final exportData = await _fileService.importData();
 
       if (exportData == null) {
-        // User cancelled file selection
         setState(() {
           _isLoading = false;
           _statusMessage = null;
@@ -546,13 +535,11 @@ class _SettingsScreenState extends State<SettingsScreen> with SignalsMixin {
         _statusMessage = 'Validating data...';
       });
 
-      // Validate data
       if (!_fileService.validateImportData(exportData)) {
         _showErrorMessage('Invalid backup file format');
         return;
       }
 
-      // Show confirmation dialog
       final confirmed = await _showImportConfirmDialog(exportData);
       if (!confirmed) {
         setState(() {
@@ -566,10 +553,8 @@ class _SettingsScreenState extends State<SettingsScreen> with SignalsMixin {
         _statusMessage = 'Importing data...';
       });
 
-      // Import data
       await AppStorageManager.instance.importAllData(exportData.toJson());
 
-      // Refresh UI data
       await _loadStorageInfo();
 
       _showSuccessMessage(
@@ -670,9 +655,9 @@ class _SettingsScreenState extends State<SettingsScreen> with SignalsMixin {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.red.withOpacity(0.1),
+                    color: Colors.red.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.red.withOpacity(0.3)),
+                    border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
                   ),
                   child: const Row(
                     children: [
@@ -777,7 +762,6 @@ class _SettingsScreenState extends State<SettingsScreen> with SignalsMixin {
     });
 
     try {
-      // Get comprehensive data check
       final startupData = await SimplePersistenceFix.checkStartupData();
       final status = await SimplePersistenceFix.getStorageStatus();
 
@@ -873,7 +857,6 @@ class _SettingsScreenState extends State<SettingsScreen> with SignalsMixin {
           _showSuccessMessage(
             'Data recovered successfully! Please refresh the app.',
           );
-          // Reload storage info
           await _loadStorageInfo();
         } else {
           _showErrorMessage('Failed to restore recovered data');

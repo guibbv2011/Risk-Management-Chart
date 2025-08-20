@@ -12,7 +12,6 @@ class RiskManagementViewModel extends ChangeNotifier {
   final RiskManagementService _riskService;
   final ConfigStorage _configStorage;
 
-  // Signals for reactive state management
   late final Signal<List<Trade>> _trades;
   late final Signal<RiskManagement> _riskSettings;
   late final Signal<ServiceTradingStatistics?> _statistics;
@@ -20,7 +19,6 @@ class RiskManagementViewModel extends ChangeNotifier {
   late final Signal<bool> _isLoading;
   late final Signal<String?> _errorMessage;
 
-  // Input field signals
   late final Signal<String> _maxDrawdownInput;
   late final Signal<String> _lossPerTradeInput;
   late final Signal<String> _tradeResultInput;
@@ -42,16 +40,13 @@ class RiskManagementViewModel extends ChangeNotifier {
     _isLoading = Signal<bool>(false);
     _errorMessage = Signal<String?>(null);
 
-    // Initialize input fields with current values for better UX
     _maxDrawdownInput = Signal<String>('');
     _lossPerTradeInput = Signal<String>('');
     _tradeResultInput = Signal<String>('');
 
-    // Validate initial settings
     InitializationValidator.validateInitialValues(_riskService.riskSettings);
   }
 
-  // Getters for signals
   Signal<List<Trade>> get trades => _trades;
   Signal<RiskManagement> get riskSettings => _riskSettings;
   Signal<ServiceTradingStatistics?> get statistics => _statistics;
@@ -63,7 +58,6 @@ class RiskManagementViewModel extends ChangeNotifier {
   Signal<String> get lossPerTradeInput => _lossPerTradeInput;
   Signal<String> get tradeResultInput => _tradeResultInput;
 
-  // Computed properties
   String get formattedMaxLossPerTrade {
     return _riskSettings.value.maxLossPerTrade.toStringAsFixed(2);
   }
@@ -72,14 +66,9 @@ class RiskManagementViewModel extends ChangeNotifier {
     final tradesList = _trades.value;
     List<ChartData> data = [];
 
-    // Always start with 0 point at index 0 (starting point)
     data.add(ChartData(0, 0.0));
 
-    debugPrint('🔢 Generating chart data:');
-    debugPrint('   Starting point: (0, 0.0)');
-
     if (tradesList.isEmpty) {
-      debugPrint('   No trades - returning starting point only');
       return data;
     }
 
@@ -87,14 +76,9 @@ class RiskManagementViewModel extends ChangeNotifier {
 
     for (int i = 0; i < tradesList.length; i++) {
       runningTotal += tradesList[i].result;
-      // Add trade points starting from index 1
       data.add(ChartData(i + 1, runningTotal));
-      debugPrint(
-        '   Trade ${i + 1}: \$${tradesList[i].result.toStringAsFixed(2)} → Running Total: \$${runningTotal.toStringAsFixed(2)}',
-      );
     }
 
-    debugPrint('   Final chart data: ${data.length} points');
     return data;
   }
 
@@ -103,7 +87,6 @@ class RiskManagementViewModel extends ChangeNotifier {
     List<ChartData> data = [];
     data.add(ChartData(0, -riskSettings.value.maxDrawdown));
     if (tradesList.isEmpty) {
-      debugPrint('   No trades - returning starting point only for drawdown');
       return data;
     }
     double currentDD = -riskSettings.value.maxDrawdown;
@@ -115,10 +98,8 @@ class RiskManagementViewModel extends ChangeNotifier {
       final result = tradesList[i].result;
       if (result < 0) {
         data.add(ChartData(i + 1, currentDD));
-        debugPrint('   Trade ${i + 1}: Loss - Drawdown remains ${currentDD.toStringAsFixed(2)}');
       } else {
         final distance = runningTotal - currentDD;
-        debugPrint('   Trade ${i + 1}: Profit - Distance: ${distance.toStringAsFixed(2)}');
         if (distance >= maxDD) {
           double newDD = runningTotal - maxDD;
           if (!isDynamic && newDD > 0) {
@@ -126,14 +107,11 @@ class RiskManagementViewModel extends ChangeNotifier {
           }
           currentDD = newDD;
           data.add(ChartData(i + 1, currentDD));
-          debugPrint('     Updated Drawdown to ${currentDD.toStringAsFixed(2)}');
         } else {
           data.add(ChartData(i + 1, currentDD));
-          debugPrint('     Drawdown unchanged');
         }
       }
     }
-    debugPrint('   Final drawdown chart data: ${data.length} points');
     return data;
   }
 
@@ -142,44 +120,27 @@ class RiskManagementViewModel extends ChangeNotifier {
       _isLoading.value = true;
       _errorMessage.value = null;
 
-      debugPrint('🚀 Starting view model data loading...');
-
-      // Load saved risk settings first
       await _loadSavedRiskSettings();
 
-      // Check if we have any existing trades in storage
-      final existingTrades = await _riskService.getAllTrades();
-      debugPrint('Found ${existingTrades.length} existing trades in storage');
 
-      // Initialize current balance from existing trades
       await _riskService.initializeCurrentBalance();
 
-      // Refresh all data
       await _refreshData();
 
-      // If we still have no data, attempt recovery
       if (_trades.value.isEmpty && !await _configStorage.hasRiskSettings()) {
-        debugPrint('⚠️ No data loaded, attempting recovery...');
         await attemptDataRecovery();
       }
 
-      debugPrint('✅ View model data loading completed');
     } catch (e) {
       _errorMessage.value = 'Failed to load initial data: ${e.toString()}';
-      debugPrint('❌ Error loading initial data: $e');
     } finally {
       _isLoading.value = false;
     }
   }
 
   Future<void> _refreshData() async {
-    debugPrint('🔄 Refreshing data from storage...');
-
-    debugPrint('📊 Loading trades from storage...');
     final trades = await _riskService.getAllTrades();
-    debugPrint('📊 Loaded ${trades.length} trades from storage');
 
-    debugPrint('📈 Calculating statistics...');
     final stats = await _riskService.getTradingStatistics();
     final status = await _riskService.checkRiskStatus();
 
@@ -188,83 +149,31 @@ class RiskManagementViewModel extends ChangeNotifier {
     _riskStatus.value = status;
     _riskSettings.value = _riskService.riskSettings;
 
-    debugPrint('✅ Data refresh completed:');
-    debugPrint('   Trades loaded: ${trades.length}');
-    debugPrint(
-      '   Current balance: \$${_riskSettings.value.currentBalance.toStringAsFixed(2)}',
-    );
-    debugPrint('   Total P&L: \$${stats.totalPnL.toStringAsFixed(2)}');
-    debugPrint('   Risk status: ${status.name}');
   }
 
-  /// Load saved risk settings from storage
   Future<void> _loadSavedRiskSettings() async {
     try {
-      debugPrint('📂 Loading saved risk settings from storage...');
       final savedSettings = await _configStorage.loadRiskSettings();
       if (savedSettings != null) {
-        debugPrint('📄 Found saved settings in storage');
-        debugPrint(
-          '   Saved Balance: \$${savedSettings.currentBalance.toStringAsFixed(2)}',
-        );
-        debugPrint(
-          '   Saved Max DD: \$${savedSettings.maxDrawdown.toStringAsFixed(2)}',
-        );
-        debugPrint(
-          '   Saved Loss %: ${savedSettings.lossPerTradePercentage.toStringAsFixed(1)}%',
-        );
 
-        // Validate loaded settings
         if (_riskService.validateRiskSettings(savedSettings)) {
           _riskService.updateRiskSettings(savedSettings);
-          debugPrint('✅ Loaded and applied saved risk settings successfully');
-        } else {
-          debugPrint('✗ Invalid saved risk settings, using defaults');
-        }
+        } 
       } else {
-        debugPrint('No saved risk settings found, initializing with defaults');
         await _initializeDefaultSettings();
       }
     } catch (e) {
-      debugPrint('✗ Failed to load saved risk settings: $e');
-      // Continue with default settings
+      rethrow;
     }
   }
 
-  /// Save risk settings to storage
   Future<void> _saveRiskSettings() async {
     try {
-      debugPrint('💾 Saving risk settings to storage...');
-      debugPrint(
-        '   Balance: \$${_riskSettings.value.currentBalance.toStringAsFixed(2)}',
-      );
-      debugPrint(
-        '   Max DD: \$${_riskSettings.value.maxDrawdown.toStringAsFixed(2)}',
-      );
-      debugPrint(
-        '   Loss %: ${_riskSettings.value.lossPerTradePercentage.toStringAsFixed(1)}%',
-      );
-
       await _configStorage.saveRiskSettings(_riskSettings.value);
-      debugPrint('✅ Risk settings saved to primary storage successfully');
 
-      // Verify settings were saved by reading them back
-      final savedSettings = await _configStorage.loadRiskSettings();
-      if (savedSettings != null) {
-        debugPrint(
-          '📋 Verification: Settings loaded back with balance \$${savedSettings.currentBalance.toStringAsFixed(2)}',
-        );
-      } else {
-        debugPrint('⚠️ Warning: Could not verify saved settings');
-      }
-
-      // Create simple backup
-      debugPrint('Creating backup copies...');
       await _createSimpleBackup();
-      debugPrint('✓ Risk settings backup completed');
     } catch (e) {
-      debugPrint('✗ Failed to save risk settings: $e');
-      // Don't throw error to avoid interrupting user workflow
+      rethrow;
     }
   }
 
@@ -274,47 +183,17 @@ class RiskManagementViewModel extends ChangeNotifier {
       _errorMessage.value = null;
 
       final tradeResult = double.parse(tradeResultText);
-      final tradesCount = _trades.value.length;
 
-      debugPrint(
-        'Adding trade #${tradesCount + 1} with result: \$${tradeResult.toStringAsFixed(2)}',
-      );
-      debugPrint(
-        'Current balance before trade: \$${_riskSettings.value.currentBalance.toStringAsFixed(2)}',
-      );
-
-      debugPrint('📤 Saving trade to storage...');
       await _riskService.addTrade(tradeResult);
-      debugPrint('✓ Trade added to database successfully');
-
-      // Verify trade was actually saved
-      final tradesAfter = await _riskService.getAllTrades();
-      debugPrint(
-        '📊 Verification: ${tradesAfter.length} trades now in storage',
-      );
 
       _tradeResultInput.value = '';
 
-      // Update local risk settings to reflect the balance change
       _riskSettings.value = _riskService.riskSettings;
 
-      // Save updated risk settings immediately after trade
-      debugPrint('💾 Saving updated risk settings after trade...');
       await _saveRiskSettings();
-      debugPrint('🔄 Refreshing data after trade addition...');
       await _refreshData();
 
-      debugPrint(
-        'New balance after trade: \$${_riskSettings.value.currentBalance.toStringAsFixed(2)}',
-      );
-      debugPrint('Total trades now: ${_trades.value.length}');
-
-      // Create simple backup after adding trade
-      debugPrint('Creating backup after trade addition...');
       await _createSimpleBackup();
-      debugPrint('✓ Trade data backup completed');
-
-      // Notify listeners of the state change
       notifyListeners();
     } on FormatException {
       _errorMessage.value =
@@ -323,7 +202,6 @@ class RiskManagementViewModel extends ChangeNotifier {
       _errorMessage.value = e.message;
     } catch (e) {
       _errorMessage.value = 'Failed to add trade: ${e.toString()}';
-      debugPrint('Error adding trade: $e');
     } finally {
       _isLoading.value = false;
     }
@@ -339,7 +217,6 @@ class RiskManagementViewModel extends ChangeNotifier {
 
       final maxDrawdown = double.parse(maxDrawdownText);
 
-      // Parse account balance if provided
       double accountBalance = _riskSettings.value.accountBalance;
       bool accountBalanceChanged = false;
 
@@ -360,15 +237,12 @@ class RiskManagementViewModel extends ChangeNotifier {
         );
       }
 
-      // Calculate current balance based on existing trades if account balance changed
       double currentBalance = _riskSettings.value.currentBalance;
       if (accountBalanceChanged) {
-        // Recalculate current balance: new account balance + existing P&L
         final totalPnL = await _riskService.getTotalPnL();
         currentBalance = accountBalance + totalPnL;
       }
 
-      // Validate the update before applying
       final updateValid = InitializationValidator.validateMaxDrawdownUpdate(
         oldMaxDrawdown: _riskSettings.value.maxDrawdown,
         newMaxDrawdown: maxDrawdown,
@@ -383,7 +257,6 @@ class RiskManagementViewModel extends ChangeNotifier {
         throw ArgumentError('Invalid max drawdown update parameters');
       }
 
-      // Update settings with all related values
       final newSettings = _riskSettings.value.copyWith(
         accountBalance: accountBalance,
         currentBalance: currentBalance,
@@ -398,37 +271,17 @@ class RiskManagementViewModel extends ChangeNotifier {
         _riskSettings.value = newSettings;
         _maxDrawdownInput.value = '';
 
-        // Save settings to storage
         await _saveRiskSettings();
         await _refreshData();
 
-        debugPrint('✅ Max drawdown updated successfully:');
-        debugPrint(
-          '   Account Balance: \$${accountBalance.toStringAsFixed(2)}',
-        );
-        debugPrint(
-          '   Current Balance: \$${currentBalance.toStringAsFixed(2)}',
-        );
-        debugPrint('   Max Drawdown: \$${maxDrawdown.toStringAsFixed(2)}');
-        debugPrint('   Dynamic Max DD: ${newSettings.isDynamicMaxDrawdown}');
-
-        // Update input signals to reflect new values
         _maxDrawdownInput.value = maxDrawdown.toStringAsFixed(2);
 
-        // Validate state synchronization
         InitializationValidator.validateStateSynchronization(
           settings: newSettings,
           maxDrawdownInput: _maxDrawdownInput.value,
           lossPerTradeInput: _lossPerTradeInput.value,
         );
 
-        // Log current state for verification
-        InitializationValidator.logCurrentState(
-          newSettings,
-          'After Max DD Update',
-        );
-
-        // Notify listeners of the state change
         notifyListeners();
       } else {
         throw ArgumentError('Invalid risk settings');
@@ -440,7 +293,6 @@ class RiskManagementViewModel extends ChangeNotifier {
       _errorMessage.value = e.message;
     } catch (e) {
       _errorMessage.value = 'Failed to update max drawdown: ${e.toString()}';
-      debugPrint('Error updating max drawdown: $e');
     }
   }
 
@@ -453,7 +305,6 @@ class RiskManagementViewModel extends ChangeNotifier {
         throw ArgumentError('Loss per trade must be between 0 and 100');
       }
 
-      // Preserve current balance when updating loss per trade percentage
       final newSettings = _riskSettings.value.copyWith(
         lossPerTradePercentage: lossPerTrade,
       );
@@ -463,11 +314,9 @@ class RiskManagementViewModel extends ChangeNotifier {
         _riskSettings.value = newSettings;
         _lossPerTradeInput.value = lossPerTrade.toStringAsFixed(0);
 
-        // Save settings to storage
         await _saveRiskSettings();
         await _refreshData();
 
-        // Notify listeners of the state change
         notifyListeners();
       } else {
         throw ArgumentError('Invalid risk settings');
@@ -479,7 +328,6 @@ class RiskManagementViewModel extends ChangeNotifier {
       _errorMessage.value = e.message;
     } catch (e) {
       _errorMessage.value = 'Failed to update loss per trade: ${e.toString()}';
-      debugPrint('Error updating loss per trade: $e');
     }
   }
 
@@ -488,21 +336,14 @@ class RiskManagementViewModel extends ChangeNotifier {
       _isLoading.value = true;
       _errorMessage.value = null;
 
-      debugPrint('🗑️ Clearing all trades from storage...');
       await _riskService.clearAllTrades();
-      debugPrint('✅ All trades cleared from storage');
 
-      // Save updated risk settings after clearing trades (balance reset)
-      debugPrint('💾 Saving reset risk settings...');
       await _saveRiskSettings();
-      debugPrint('🔄 Refreshing data after clearing trades...');
       await _refreshData();
 
-      // Create simple backup after clearing trades
       await _createSimpleBackup();
     } catch (e) {
       _errorMessage.value = 'Failed to clear trades: ${e.toString()}';
-      debugPrint('Error clearing trades: $e');
     } finally {
       _isLoading.value = false;
     }
@@ -533,13 +374,13 @@ class RiskManagementViewModel extends ChangeNotifier {
   Color getRiskStatusColor() {
     switch (_riskStatus.value) {
       case RiskStatus.low:
-        return const Color(0xFF4CAF50); // Green
+        return const Color(0xFF4CAF50);
       case RiskStatus.medium:
-        return const Color(0xFFFF9800); // Orange
+        return const Color(0xFFFF9800);
       case RiskStatus.high:
-        return const Color(0xFFFF5722); // Deep Orange
+        return const Color(0xFFFF5722);
       case RiskStatus.critical:
-        return const Color(0xFFF44336); // Red
+        return const Color(0xFFF44336);
     }
   }
 
@@ -556,13 +397,11 @@ class RiskManagementViewModel extends ChangeNotifier {
     }
   }
 
-  /// Reset all settings to defaults
   Future<void> resetToDefaults() async {
     try {
       _isLoading.value = true;
       _errorMessage.value = null;
 
-      // Create default settings
       final defaultSettings = RiskManagement(
         maxDrawdown: 0.0,
         lossPerTradePercentage: 0.0,
@@ -571,44 +410,35 @@ class RiskManagementViewModel extends ChangeNotifier {
         isDynamicMaxDrawdown: false,
       );
 
-      // Update service and view model
       _riskService.updateRiskSettings(defaultSettings);
       _riskSettings.value = defaultSettings;
 
-      // Save to storage
       await _saveRiskSettings();
       await _refreshData();
     } catch (e) {
       _errorMessage.value = 'Failed to reset settings: ${e.toString()}';
-      debugPrint('Error resetting to defaults: $e');
     } finally {
       _isLoading.value = false;
     }
   }
 
-  /// Clear all stored data (settings and trades)
   Future<void> clearAllStoredData() async {
     try {
       _isLoading.value = true;
       _errorMessage.value = null;
 
-      // Clear trades
       await clearAllTrades();
 
-      // Clear stored settings
       await _configStorage.clearRiskSettings();
 
-      // Reset to defaults
       await resetToDefaults();
     } catch (e) {
       _errorMessage.value = 'Failed to clear all data: ${e.toString()}';
-      debugPrint('Error clearing all stored data: $e');
     } finally {
       _isLoading.value = false;
     }
   }
 
-  /// Create simple backup of current data
   Future<void> _createSimpleBackup() async {
     try {
       final trades = await _riskService.getAllTrades();
@@ -616,149 +446,85 @@ class RiskManagementViewModel extends ChangeNotifier {
         riskSettings: _riskSettings.value,
         trades: trades,
       );
-      debugPrint('Simple backup created successfully');
     } catch (e) {
-      debugPrint('Failed to create simple backup: $e');
-      // Don't throw error to avoid interrupting user workflow
     }
   }
 
-  /// Attempt to recover data if current data is empty
   Future<void> attemptDataRecovery() async {
     try {
-      debugPrint('🔄 Attempting comprehensive data recovery...');
-
-      // Step 1: Check current state
-      final currentTrades = _trades.value.length;
-      final hasSettings = await _configStorage.hasRiskSettings();
-      debugPrint(
-        'Current state - Trades: $currentTrades, Settings: $hasSettings',
-      );
-
-      // Step 2: Try backup recovery
       final recoveredData = await SimplePersistenceFix.tryRecoverData();
 
       if (recoveredData != null) {
-        debugPrint('✅ Recovery data found, attempting restore...');
         final restored = await SimplePersistenceFix.restoreData(recoveredData);
 
         if (restored) {
-          debugPrint('✅ Data recovery successful, refreshing view...');
 
-          // Force reload everything
           await forceReload();
 
-          // Verify recovery worked
           final newTrades = _trades.value.length;
           final newHasSettings = await _configStorage.hasRiskSettings();
-          debugPrint(
-            'After recovery - Trades: $newTrades, Settings: $newHasSettings',
-          );
 
           if (newTrades > 0 || newHasSettings) {
             _errorMessage.value = 'Data recovered successfully from backup';
           }
         } else {
-          debugPrint('❌ Data recovery failed during restoration');
           _errorMessage.value = 'Found backup data but failed to restore it';
         }
-      } else {
-        debugPrint('❌ No recoverable data found in backup locations');
-
-        // Step 3: Try to directly check storage locations
-        debugPrint('🔍 Checking storage status...');
-        final storageStatus = await SimplePersistenceFix.getStorageStatus();
-        debugPrint('Storage status:\n$storageStatus');
-      }
+      } 
     } catch (e) {
-      debugPrint('❌ Data recovery attempt failed: $e');
       _errorMessage.value = 'Data recovery failed: ${e.toString()}';
     }
   }
 
-  /// Force reload data from storage
   Future<void> forceReload() async {
     try {
       _isLoading.value = true;
       _errorMessage.value = null;
 
-      debugPrint('🔄 Force reload initiated...');
-
-      // Clear view model cached data
       _trades.value = [];
       _statistics.value = null;
 
-      // Reload from storage with verification
       await _loadSavedRiskSettings();
       await _riskService.initializeCurrentBalance();
       await _refreshData();
 
-      // Verify data was loaded
-      final finalTradesCount = _trades.value.length;
-      final hasSettings = await _configStorage.hasRiskSettings();
-      debugPrint(
-        '✅ Force reload completed - Trades: $finalTradesCount, Settings: $hasSettings',
-      );
-
-      if (finalTradesCount == 0 && !hasSettings) {
-        debugPrint(
-          '⚠️ Force reload found no data, this might indicate a storage issue',
-        );
-      }
     } catch (e) {
       _errorMessage.value = 'Failed to reload data: ${e.toString()}';
-      debugPrint('❌ Force reload failed: $e');
     } finally {
       _isLoading.value = false;
     }
   }
 
-  /// Initialize default settings when no saved settings exist
   Future<void> _initializeDefaultSettings() async {
     try {
-      debugPrint('Initializing default risk settings...');
 
-      // Create default settings using validator
       final defaultSettings = InitializationValidator.createDefaultSettings();
 
-      // Update service and signals
       _riskService.updateRiskSettings(defaultSettings);
       _riskSettings.value = defaultSettings;
 
-      // Update input signals to match
       _maxDrawdownInput.value = '0.00';
       _lossPerTradeInput.value = '0';
 
-      // Validate state synchronization
       InitializationValidator.validateStateSynchronization(
         settings: defaultSettings,
         maxDrawdownInput: _maxDrawdownInput.value,
         lossPerTradeInput: _lossPerTradeInput.value,
       );
 
-      // Save the default settings
       await _saveRiskSettings();
 
-      // Log the initialized state
-      InitializationValidator.logCurrentState(
-        defaultSettings,
-        'Default Initialization',
-      );
-
-      debugPrint('✅ Default settings initialized and saved');
     } catch (e) {
-      debugPrint('❌ Failed to initialize default settings: $e');
+      rethrow;
     }
   }
 
   @override
   void dispose() {
-    // Dispose signals if needed
     super.dispose();
   }
 }
 
-// Helper classes
 class ChartData {
   final int x;
   final double y;

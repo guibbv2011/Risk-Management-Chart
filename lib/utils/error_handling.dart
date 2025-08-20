@@ -1,6 +1,4 @@
-import 'package:flutter/foundation.dart';
 
-/// Custom exception types for the application
 class AppException implements Exception {
   final String message;
   final String? code;
@@ -24,81 +22,55 @@ class AppException implements Exception {
   }
 }
 
-/// Storage-specific exception
 class StorageException extends AppException {
   const StorageException(
-    String message, {
-    String? code,
-    dynamic originalError,
-    StackTrace? stackTrace,
-  }) : super(
-         message,
-         code: code,
-         originalError: originalError,
-         stackTrace: stackTrace,
-       );
+    super.message, {
+    super.code,
+    super.originalError,
+    super.stackTrace,
+  });
 
   @override
   String toString() => 'StorageException: $message';
 }
 
-/// Validation-specific exception
 class ValidationException extends AppException {
   const ValidationException(
-    String message, {
-    String? code,
-    dynamic originalError,
-    StackTrace? stackTrace,
-  }) : super(
-         message,
-         code: code,
-         originalError: originalError,
-         stackTrace: stackTrace,
-       );
+    super.message, {
+    super.code,
+    super.originalError,
+    super.stackTrace,
+  });
 
   @override
   String toString() => 'ValidationException: $message';
 }
 
-/// Repository-specific exception
 class RepositoryException extends AppException {
   const RepositoryException(
-    String message, {
-    String? code,
-    dynamic originalError,
-    StackTrace? stackTrace,
-  }) : super(
-         message,
-         code: code,
-         originalError: originalError,
-         stackTrace: stackTrace,
-       );
+    super.message, {
+    super.code,
+    super.originalError,
+    super.stackTrace,
+  });
 
   @override
   String toString() => 'RepositoryException: $message';
 }
 
-/// Service-specific exception
 class ServiceException extends AppException {
   const ServiceException(
-    String message, {
-    String? code,
-    dynamic originalError,
-    StackTrace? stackTrace,
-  }) : super(
-         message,
-         code: code,
-         originalError: originalError,
-         stackTrace: stackTrace,
-       );
+    super.message, {
+    super.code,
+    super.originalError,
+    super.stackTrace,
+  });
 
   @override
   String toString() => 'ServiceException: $message';
 }
 
-/// Utility class for consistent error handling patterns
 class ErrorHandler {
-  /// Log error with consistent formatting
   static void logError(
     String context,
     dynamic error, {
@@ -110,15 +82,8 @@ class ErrorHandler {
     if (additionalInfo != null) {
       buffer.write(' | Info: $additionalInfo');
     }
-
-    debugPrint(buffer.toString());
-
-    if (stackTrace != null && kDebugMode) {
-      debugPrint('Stack trace: $stackTrace');
-    }
   }
 
-  /// Handle storage operations with consistent error handling
   static Future<T> handleStorageOperation<T>(
     String operationName,
     Future<T> Function() operation, {
@@ -141,7 +106,6 @@ class ErrorHandler {
     }
   }
 
-  /// Handle repository operations with consistent error handling
   static Future<T> handleRepositoryOperation<T>(
     String operationName,
     Future<T> Function() operation, {
@@ -161,7 +125,6 @@ class ErrorHandler {
         additionalInfo: context,
       );
 
-      // Re-throw storage exceptions as-is
       if (e is StorageException) {
         rethrow;
       }
@@ -174,7 +137,6 @@ class ErrorHandler {
     }
   }
 
-  /// Handle service operations with consistent error handling
   static Future<T> handleServiceOperation<T>(
     String operationName,
     Future<T> Function() operation, {
@@ -189,7 +151,6 @@ class ErrorHandler {
 
       logError('Service', e, stackTrace: stackTrace, additionalInfo: context);
 
-      // Re-throw known exceptions as-is
       if (e is AppException) {
         rethrow;
       }
@@ -202,7 +163,6 @@ class ErrorHandler {
     }
   }
 
-  /// Validate input with consistent error handling
   static T validateInput<T>(
     String fieldName,
     T? value, {
@@ -219,7 +179,6 @@ class ErrorHandler {
     return value!;
   }
 
-  /// Validate numeric input
   static double validateNumeric(
     String fieldName,
     dynamic value, {
@@ -262,7 +221,6 @@ class ErrorHandler {
     return numValue;
   }
 
-  /// Validate string input
   static String validateString(
     String fieldName,
     String? value, {
@@ -302,7 +260,6 @@ class ErrorHandler {
     return value;
   }
 
-  /// Create a safe operation wrapper that doesn't throw
   static Future<ErrorResult<T>> safeOperation<T>(
     Future<T> Function() operation, {
     String? context,
@@ -318,7 +275,6 @@ class ErrorHandler {
     }
   }
 
-  /// Format error message consistently
   static String formatErrorMessage(
     String operation,
     dynamic error, {
@@ -342,7 +298,6 @@ class ErrorHandler {
   }
 }
 
-/// Result wrapper for operations that may fail
 class ErrorResult<T> {
   final T? data;
   final dynamic error;
@@ -368,7 +323,6 @@ class ErrorResult<T> {
     );
   }
 
-  /// Get data or throw error
   T get dataOrThrow {
     if (isSuccess) {
       return data!;
@@ -376,16 +330,14 @@ class ErrorResult<T> {
     throw error;
   }
 
-  /// Get data or return default value
   T dataOr(T defaultValue) {
     return isSuccess ? data! : defaultValue;
   }
 
-  /// Transform the data if successful
   ErrorResult<U> map<U>(U Function(T data) transform) {
     if (isSuccess) {
       try {
-        return ErrorResult.success(transform(data!));
+        return ErrorResult.success(transform(data as T));
       } catch (e, stackTrace) {
         return ErrorResult.error(e, stackTrace);
       }
@@ -399,9 +351,7 @@ class ErrorResult<T> {
   }
 }
 
-/// Common validation rules
 class ValidationRules {
-  /// Validate account balance
   static double validateAccountBalance(double? value) {
     return ErrorHandler.validateNumeric(
       'Account balance',
@@ -411,7 +361,6 @@ class ValidationRules {
     );
   }
 
-  /// Validate max drawdown
   static double validateMaxDrawdown(double? value, double accountBalance) {
     final validated = ErrorHandler.validateNumeric(
       'Max drawdown',
@@ -430,7 +379,6 @@ class ValidationRules {
     return validated;
   }
 
-  /// Validate loss percentage per trade
   static double validateLossPercentage(double? value) {
     return ErrorHandler.validateNumeric(
       'Loss percentage per trade',
@@ -441,7 +389,6 @@ class ValidationRules {
     );
   }
 
-  /// Validate trade result
   static double validateTradeResult(double? value) {
     return ErrorHandler.validateNumeric(
       'Trade result',

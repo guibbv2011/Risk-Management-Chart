@@ -27,11 +27,10 @@ class _RiskControlsWidgetState extends State<RiskControlsWidget>
     return BottomAppBar(
       color: Colors.transparent,
 
-      padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+      padding: const EdgeInsets.fromLTRB(4, 0, 4, 4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          // Main controls card
           Expanded(
             child: ClipRRect(
               borderRadius: BorderRadius.circular(20),
@@ -41,7 +40,6 @@ class _RiskControlsWidgetState extends State<RiskControlsWidget>
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    // Loss Per Trade Button
                     Expanded(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -49,13 +47,12 @@ class _RiskControlsWidgetState extends State<RiskControlsWidget>
                           IconButton(
                             tooltip: "Set % Loss Per Trade",
                             color: Colors.deepPurpleAccent,
-                            icon: const Icon(Icons.percent, size: 24),
+                            icon: const Icon(Icons.percent, size: 20),
                             onPressed: widget.onLossPerTradePressed,
                           ),
                         ],
                       ),
                     ),
-                    // Max Drawdown Button
                     Expanded(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -63,25 +60,24 @@ class _RiskControlsWidgetState extends State<RiskControlsWidget>
                           IconButton(
                             tooltip: "Set Max Drawdown (\$)",
                             color: Colors.deepPurpleAccent,
-                            icon: const Icon(Icons.trending_down, size: 24),
+                            icon: const Icon(Icons.trending_down, size: 20),
                             onPressed: widget.onMaxDrawdownPressed,
                           ),
                         ],
                       ),
                     ),
 
-                    // Max Loss Display
                     Expanded(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Container(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
+                              horizontal: 4,
+                              vertical: 2,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.redAccent.withOpacity(0.2),
+                              color: Colors.redAccent.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(8),
                               border: Border.all(
                                 color: Colors.redAccent,
@@ -94,7 +90,7 @@ class _RiskControlsWidgetState extends State<RiskControlsWidget>
                                 child: Text(
                                   widget.viewModel.formattedMaxLossPerTrade,
                                   style: const TextStyle(
-                                    fontSize: 16,
+                                    fontSize: 14,
                                     color: Colors.redAccent,
                                     fontWeight: FontWeight.bold,
                                   ),
@@ -110,9 +106,9 @@ class _RiskControlsWidgetState extends State<RiskControlsWidget>
               ),
             ),
           ),
-          Container(
-            height: 80.0,
-            width: 80.0,
+          SizedBox(
+            height: 60.0,
+            width: 60.0,
             child: Card(
               color: Colors.grey.shade900,
               elevation: 4,
@@ -130,7 +126,7 @@ class _RiskControlsWidgetState extends State<RiskControlsWidget>
                       child: Icon(
                         Icons.add_circle,
                         color: Colors.deepPurpleAccent,
-                        size: 32,
+                        size: 24,
                       ),
                     ),
                   ],

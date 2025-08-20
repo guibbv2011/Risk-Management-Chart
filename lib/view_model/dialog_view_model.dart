@@ -2,7 +2,6 @@ import 'package:flutter/foundation.dart';
 import 'package:signals/signals_flutter.dart';
 
 class DialogViewModel extends ChangeNotifier {
-  // Signals for dialog state
   late final Signal<bool> _isDialogOpen;
   late final Signal<String> _dialogTitle;
   late final Signal<String> _dialogHint;
@@ -29,7 +28,6 @@ class DialogViewModel extends ChangeNotifier {
     _isDynamicMaxDrawdownEnabled = Signal<bool>(false);
   }
 
-  // Getters for signals
   Signal<bool> get isDialogOpen => _isDialogOpen;
   Signal<String> get dialogTitle => _dialogTitle;
   Signal<String> get dialogHint => _dialogHint;
@@ -74,20 +72,19 @@ class DialogViewModel extends ChangeNotifier {
 
   void updateInputValue(String value) {
     _dialogInputValue.value = value;
-    _dialogError.value = null; // Clear error when user types
+    _dialogError.value = null; 
     notifyListeners();
   }
 
   void updateAccountBalanceValue(String value) {
     _dialogAccountBalanceValue.value = value;
-    _dialogAccountBalanceError.value = null; // Clear error when user types
+    _dialogAccountBalanceError.value = null; 
     notifyListeners();
   }
 
   bool validateInput() {
     bool isValid = true;
 
-    // Validate main input
     final value = _dialogInputValue.value.trim();
     if (value.isEmpty) {
       _dialogError.value = 'Please enter a value';
@@ -98,7 +95,6 @@ class DialogViewModel extends ChangeNotifier {
         _dialogError.value = 'Please enter a valid number';
         isValid = false;
       } else {
-        // Type-specific validation
         switch (_dialogType.value) {
           case DialogType.maxDrawdown:
             if (parsedValue < 0) {
@@ -123,7 +119,6 @@ class DialogViewModel extends ChangeNotifier {
       }
     }
 
-    // Validate account balance for Max Drawdown dialog
     if (_dialogType.value == DialogType.maxDrawdown) {
       final balanceValue = _dialogAccountBalanceValue.value.trim();
       if (balanceValue.isEmpty) {
@@ -178,7 +173,6 @@ class DialogViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Helper methods for specific dialog types
   void openMaxDrawdownDialog({
     bool isDynamicEnabled = false,
     String currentBalance = '',
@@ -235,7 +229,6 @@ class DialogViewModel extends ChangeNotifier {
 
   @override
   void dispose() {
-    // Dispose of signals if needed
     super.dispose();
   }
 }

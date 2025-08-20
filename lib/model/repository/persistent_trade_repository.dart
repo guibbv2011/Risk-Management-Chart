@@ -5,7 +5,6 @@ import '../../utils/error_handling.dart';
 
 import 'trade_repository.dart';
 
-/// Persistent implementation of TradeRepository using local storage
 class PersistentTradeRepository implements TradeRepository {
   final TradeStorage _storage;
   List<Trade>? _cachedTrades;
@@ -14,7 +13,6 @@ class PersistentTradeRepository implements TradeRepository {
   PersistentTradeRepository({required TradeStorage storage})
     : _storage = storage;
 
-  /// Ensure the repository is initialized
   Future<void> _ensureInitialized() async {
     if (!_isInitialized) {
       await _storage.initializeDatabase();
@@ -22,7 +20,6 @@ class PersistentTradeRepository implements TradeRepository {
     }
   }
 
-  /// Clear cache to force reload from storage
   void _clearCache() {
     _cachedTrades = null;
   }
@@ -31,10 +28,7 @@ class PersistentTradeRepository implements TradeRepository {
   Future<List<Trade>> getAllTrades() async {
     await _ensureInitialized();
 
-    // Use cache if available, otherwise load from storage
-    if (_cachedTrades == null) {
-      _cachedTrades = await _storage.getAllTrades();
-    }
+    _cachedTrades ??= await _storage.getAllTrades();
 
     return List.unmodifiable(_cachedTrades!);
   }
@@ -46,7 +40,6 @@ class PersistentTradeRepository implements TradeRepository {
     return await ErrorHandler.handleRepositoryOperation('add trade', () async {
       final savedTrade = await _storage.saveTrade(trade);
 
-      // Update cache
       if (_cachedTrades != null) {
         _cachedTrades!.add(savedTrade);
       }
@@ -64,7 +57,6 @@ class PersistentTradeRepository implements TradeRepository {
       () async {
         final updatedTrade = await _storage.updateTrade(trade);
 
-        // Update cache
         if (_cachedTrades != null) {
           final index = _cachedTrades!.indexWhere((t) => t.id == trade.id);
           if (index != -1) {
@@ -87,7 +79,6 @@ class PersistentTradeRepository implements TradeRepository {
       () async {
         await _storage.deleteTrade(id);
 
-        // Update cache
         if (_cachedTrades != null) {
           _cachedTrades!.removeWhere((trade) => trade.id == id);
         }
@@ -100,7 +91,6 @@ class PersistentTradeRepository implements TradeRepository {
   Future<Trade?> getTradeById(int id) async {
     await _ensureInitialized();
 
-    // First check cache
     if (_cachedTrades != null) {
       try {
         return _cachedTrades!.firstWhere((trade) => trade.id == id);
@@ -109,7 +99,6 @@ class PersistentTradeRepository implements TradeRepository {
       }
     }
 
-    // If not in cache, get from storage
     return await _storage.getTradeById(id);
   }
 
@@ -182,14 +171,12 @@ class PersistentTradeRepository implements TradeRepository {
     return TradeStatisticsCalculator.calculateAverageLoss(trades);
   }
 
-  /// Force refresh cache from storage
   Future<void> refreshCache() async {
     await _ensureInitialized();
     _clearCache();
-    await getAllTrades(); // This will reload the cache
+    await getAllTrades(); 
   }
 
-  /// Get the number of trades without loading all trades into memory
   Future<int> getTradesCount() async {
     await _ensureInitialized();
 
@@ -197,17 +184,10 @@ class PersistentTradeRepository implements TradeRepository {
       return _cachedTrades!.length;
     }
 
-    // // If using SqliteTradeStorage, we can get count efficiently
-    // if (_storage is SqliteTradeStorage) {
-    //   return await _storage.getTradesCount();
-    // }
-
-    // Fallback: load all trades and count
     final trades = await getAllTrades();
     return trades.length;
   }
 
-  /// Get recent trades
   Future<List<Trade>> getRecentTrades({int limit = 10}) async {
     await _ensureInitialized();
 
@@ -220,7 +200,6 @@ class PersistentTradeRepository implements TradeRepository {
     );
   }
 
-  /// Export trades for backup
   Future<List<Map<String, dynamic>>> exportTrades() async {
     await _ensureInitialized();
 
@@ -228,20 +207,16 @@ class PersistentTradeRepository implements TradeRepository {
     return trades.map((trade) => trade.toJson()).toList();
   }
 
-  /// Import trades from backup
   Future<void> importTrades(List<Map<String, dynamic>> tradesData) async {
     await _ensureInitialized();
 
     return await ErrorHandler.handleRepositoryOperation(
       'import trades',
       () async {
-        // Clear existing trades first
         await clearAllTrades();
 
-        // Add each trade
         for (final tradeData in tradesData) {
           final trade = Trade.fromJson(tradeData);
-          // Create trade without ID to let storage assign new ID
           final newTrade = Trade(
             result: trade.result,
             timestamp: trade.timestamp,
@@ -253,7 +228,6 @@ class PersistentTradeRepository implements TradeRepository {
     );
   }
 
-  /// Close the repository and clean up resources
   Future<void> close() async {
     await _storage.close();
     _clearCache();

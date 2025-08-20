@@ -13,8 +13,6 @@ import 'storage_interface.dart';
 import '../../utils/error_handling.dart';
 import '../../utils/date_time_utils.dart';
 
-/// IndexedDB-based trade storage implementation
-/// Uses IndexedDB on web and SQLite on native platforms through idb_sqflite
 class SdbTradeStorage implements TradeStorage {
   static const String _databaseName = 'risk_management_idb';
   static const int _databaseVersion = 1;
@@ -24,7 +22,6 @@ class SdbTradeStorage implements TradeStorage {
   late idb.IdbFactory _factory;
   bool _isInitialized = false;
 
-  /// Get database instance, creating it if necessary
   Future<idb.Database> get database async {
     if (!_isInitialized) {
       await initializeDatabase();
@@ -37,13 +34,10 @@ class SdbTradeStorage implements TradeStorage {
     if (_isInitialized) return;
 
     try {
-      // Initialize the appropriate factory based on platform
       await _initializeFactory();
 
-      // Get database path
       final path = await _getDatabasePath();
 
-      // Open database with schema
       _database = await _factory.open(
         path,
         version: _databaseVersion,
@@ -51,9 +45,6 @@ class SdbTradeStorage implements TradeStorage {
       );
 
       _isInitialized = true;
-      debugPrint(
-        'IndexedDB database initialized successfully on ${_getPlatformInfo()}',
-      );
     } catch (e) {
       ErrorHandler.logError(
         'SdbTradeStorage',
@@ -67,29 +58,22 @@ class SdbTradeStorage implements TradeStorage {
     }
   }
 
-  /// Initialize the appropriate IDB factory for the current platform
   Future<void> _initializeFactory() async {
     if (kIsWeb) {
-      // Use web factory (IndexedDB)
+
       _factory = idb_browser.idbFactoryWeb;
-      debugPrint('Using IndexedDB web factory');
     } else {
-      // Initialize sqflite factory for native platforms
       if (Platform.isWindows || Platform.isLinux) {
         sqflite_ffi.sqfliteFfiInit();
         _factory = getIdbFactorySqflite(sqflite_ffi.databaseFactoryFfi);
       } else {
-        // Use default sqflite factory for mobile
         _factory = getIdbFactorySqflite(sqflite.databaseFactory);
       }
-      debugPrint('Using IndexedDB sqflite factory (SQLite)');
     }
   }
 
-  /// Get the appropriate database path for the current platform
   Future<String> _getDatabasePath() async {
     if (kIsWeb) {
-      // On web, just return the database name
       return _databaseName;
     }
 
@@ -115,30 +99,23 @@ class SdbTradeStorage implements TradeStorage {
 
       return join(directory, '$_databaseName.db');
     } catch (e) {
-      debugPrint('Error getting database path: $e');
-      // Fallback to current directory
       return '$_databaseName.db';
     }
   }
 
-  /// Handle database version changes and schema creation
   void _onUpgradeNeeded(idb.VersionChangeEvent event) {
     final db = event.database;
     final oldVersion = event.oldVersion;
 
     if (oldVersion < 1) {
-      // Create the trades object store
       final store = db.createObjectStore(
         _storeName,
         keyPath: 'id',
         autoIncrement: true,
       );
 
-      // Create indexes for efficient querying
       store.createIndex('timestamp', 'timestamp', unique: false);
       store.createIndex('result', 'result', unique: false);
-
-      debugPrint('IndexedDB stores and indexes created successfully');
     }
   }
 
@@ -161,7 +138,6 @@ class SdbTradeStorage implements TradeStorage {
 
         await transaction.completed;
 
-        // Sort by timestamp
         trades.sort((a, b) => a.timestamp.compareTo(b.timestamp));
 
         return trades;
@@ -199,7 +175,6 @@ class SdbTradeStorage implements TradeStorage {
       final transaction = db.transaction(_storeName, 'readwrite');
       final store = transaction.objectStore(_storeName);
 
-      // Check if record exists
       final existing = await store.getObject(trade.id!);
       if (existing == null) {
         throw StorageException('Trade with id ${trade.id} not found');
@@ -303,7 +278,6 @@ class SdbTradeStorage implements TradeStorage {
 
         await transaction.completed;
 
-        // Sort by timestamp
         trades.sort((a, b) => a.timestamp.compareTo(b.timestamp));
 
         return trades;
@@ -405,7 +379,6 @@ class SdbTradeStorage implements TradeStorage {
     }
   }
 
-  /// Get trade statistics using IndexedDB queries
   Future<Map<String, dynamic>> getTradeStatistics() async {
     try {
       final db = await database;
@@ -470,7 +443,6 @@ class SdbTradeStorage implements TradeStorage {
     }
   }
 
-  /// Convert IndexedDB map to Trade object
   Trade _tradeFromMap(Map<String, dynamic> data) {
     return Trade(
       id: data['id'] as int?,
@@ -479,7 +451,6 @@ class SdbTradeStorage implements TradeStorage {
     );
   }
 
-  /// Get platform information for debugging
   String _getPlatformInfo() {
     if (kIsWeb) {
       return 'Web (IndexedDB)';

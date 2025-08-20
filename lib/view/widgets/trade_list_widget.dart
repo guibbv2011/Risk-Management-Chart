@@ -23,12 +23,9 @@ class _TradeListWidgetState extends State<TradeListWidget> with SignalsMixin {
         maxHeight: MediaQuery.of(context).size.height,
       ),
 
-      // color: Colors.amber,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        // mainAxisSize: MainAxisSize.max,
         children: [
-          // Header
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -51,7 +48,6 @@ class _TradeListWidgetState extends State<TradeListWidget> with SignalsMixin {
           ),
           const SizedBox(height: 16),
 
-          // Trade list
           Expanded(
             child: Watch((_) {
               final trades = widget.viewModel.trades.value;
@@ -62,18 +58,16 @@ class _TradeListWidgetState extends State<TradeListWidget> with SignalsMixin {
               }
 
               return ListView.builder(
-                itemCount: trades.length + 1, // +1 for initial balance row
+                itemCount: trades.length + 1,
                 itemBuilder: (context, index) {
                   if (index == 0) {
-                    // Initial balance row (index 0)
                     return _buildInitialBalanceRow(riskSettings.accountBalance);
                   }
 
-                  // Trade rows - show in reverse order (latest first)
-                  final tradeIndex = trades.length - index; // Reverse the index
+                  final tradeIndex = trades.length - index;
                   final trade = trades[tradeIndex];
                   final tradeNumber =
-                      tradeIndex + 1; // Chronological trade number
+                      tradeIndex + 1;
                   final runningBalance = _calculateRunningBalance(
                     trades,
                     tradeIndex,
@@ -84,7 +78,7 @@ class _TradeListWidgetState extends State<TradeListWidget> with SignalsMixin {
                     trade: trade,
                     tradeNumber: tradeNumber,
                     runningBalance: runningBalance,
-                    isLatest: index == 1, // First displayed trade is the latest
+                    isLatest: index == 1,
                   );
                 },
               );
@@ -128,18 +122,17 @@ class _TradeListWidgetState extends State<TradeListWidget> with SignalsMixin {
         color: Colors.grey.shade900,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Colors.deepPurpleAccent.withOpacity(0.3),
+          color: Colors.deepPurpleAccent.withValues(alpha: 0.3),
           width: 1,
         ),
       ),
       child: Row(
         children: [
-          // Trade number
           Container(
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: Colors.deepPurpleAccent.withOpacity(0.2),
+              color: Colors.deepPurpleAccent.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(8),
             ),
             child: const Center(
@@ -155,7 +148,6 @@ class _TradeListWidgetState extends State<TradeListWidget> with SignalsMixin {
           ),
           const SizedBox(width: 16),
 
-          // Trade details
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -177,7 +169,6 @@ class _TradeListWidgetState extends State<TradeListWidget> with SignalsMixin {
             ),
           ),
 
-          // Balance
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
@@ -215,24 +206,23 @@ class _TradeListWidgetState extends State<TradeListWidget> with SignalsMixin {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: isLatest
-            ? Colors.deepPurpleAccent.withOpacity(0.1)
+            ? Colors.deepPurpleAccent.withValues(alpha: 0.1)
             : Colors.grey.shade900,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isLatest
-              ? Colors.deepPurpleAccent.withOpacity(0.5)
+              ? Colors.deepPurpleAccent.withValues(alpha: 0.5)
               : Colors.grey.shade800,
           width: 1,
         ),
       ),
       child: Row(
         children: [
-          // Trade number
           Container(
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.2),
+              color: color.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Center(
@@ -248,7 +238,6 @@ class _TradeListWidgetState extends State<TradeListWidget> with SignalsMixin {
           ),
           const SizedBox(width: 16),
 
-          // Trade details
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -297,7 +286,6 @@ class _TradeListWidgetState extends State<TradeListWidget> with SignalsMixin {
             ),
           ),
 
-          // Trade result and running balance
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [

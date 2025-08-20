@@ -6,15 +6,12 @@ import '../model/risk_management.dart';
 import 'error_handling.dart';
 import 'date_time_utils.dart';
 
-/// Utility class for common service operations and patterns
 class ServiceUtils {
-  /// Platform detection utilities
   static bool get isWeb => kIsWeb;
   static bool get isNative => !kIsWeb;
   static bool get isDebugMode => kDebugMode;
   static bool get isReleaseMode => kReleaseMode;
 
-  /// Get platform information string
   static String getPlatformInfo() {
     if (kIsWeb) {
       return 'Web Platform';
@@ -23,7 +20,6 @@ class ServiceUtils {
     }
   }
 
-  /// Create backup data structure
   static Map<String, dynamic> createBackupData({
     required List<Trade> trades,
     required RiskManagement riskSettings,
@@ -43,22 +39,17 @@ class ServiceUtils {
     };
   }
 
-  /// Validate backup data structure
   static bool validateBackupData(Map<String, dynamic> data) {
     try {
-      // Check required fields
       final requiredFields = ['version', 'timestamp', 'riskSettings', 'trades'];
       for (final field in requiredFields) {
         if (!data.containsKey(field)) {
-          debugPrint('Backup validation failed: missing field $field');
           return false;
         }
       }
 
-      // Validate risk settings structure
       final riskSettings = data['riskSettings'] as Map<String, dynamic>?;
       if (riskSettings == null) {
-        debugPrint('Backup validation failed: invalid risk settings');
         return false;
       }
 
@@ -69,38 +60,30 @@ class ServiceUtils {
       ];
       for (final field in riskRequiredFields) {
         if (!riskSettings.containsKey(field)) {
-          debugPrint('Backup validation failed: missing risk setting $field');
           return false;
         }
       }
 
-      // Validate trades structure
       final trades = data['trades'] as List?;
       if (trades == null) {
-        debugPrint('Backup validation failed: invalid trades data');
         return false;
       }
 
-      // Validate individual trades
       for (final trade in trades) {
         if (trade is! Map<String, dynamic>) {
-          debugPrint('Backup validation failed: invalid trade structure');
           return false;
         }
         if (!trade.containsKey('result') || !trade.containsKey('timestamp')) {
-          debugPrint('Backup validation failed: missing trade fields');
           return false;
         }
       }
 
       return true;
     } catch (e) {
-      debugPrint('Backup validation error: $e');
       return false;
     }
   }
 
-  /// Parse backup data safely
   static ErrorResult<Map<String, dynamic>> parseBackupData(String jsonString) {
     try {
       final data = jsonDecode(jsonString) as Map<String, dynamic>;
@@ -117,7 +100,6 @@ class ServiceUtils {
     }
   }
 
-  /// Convert backup data to trades list
   static ErrorResult<List<Trade>> backupDataToTrades(
     Map<String, dynamic> backupData,
   ) {
@@ -136,7 +118,6 @@ class ServiceUtils {
     }
   }
 
-  /// Convert backup data to risk settings
   static ErrorResult<RiskManagement> backupDataToRiskSettings(
     Map<String, dynamic> backupData,
   ) {
@@ -149,7 +130,6 @@ class ServiceUtils {
     }
   }
 
-  /// Generate backup file name with timestamp
   static String generateBackupFileName({
     String prefix = 'risk_management_backup',
     DateTime? timestamp,
@@ -158,12 +138,10 @@ class ServiceUtils {
     return '${prefix}_${DateTimeUtils.formatForFileName(date)}.json';
   }
 
-  /// Create formatted JSON string for export
   static String formatJsonForExport(Map<String, dynamic> data) {
     return const JsonEncoder.withIndent('  ').convert(data);
   }
 
-  /// Sanitize data for storage (remove null values, ensure proper types)
   static Map<String, dynamic> sanitizeForStorage(Map<String, dynamic> data) {
     final sanitized = <String, dynamic>{};
 
@@ -172,17 +150,15 @@ class ServiceUtils {
       final value = entry.value;
 
       if (value == null) {
-        continue; // Skip null values
+        continue; 
       }
 
       if (value is Map<String, dynamic>) {
-        // Recursively sanitize nested maps
         final nestedSanitized = sanitizeForStorage(value);
         if (nestedSanitized.isNotEmpty) {
           sanitized[key] = nestedSanitized;
         }
       } else if (value is List) {
-        // Sanitize lists
         final sanitizedList = <dynamic>[];
         for (final item in value) {
           if (item is Map<String, dynamic>) {
@@ -198,7 +174,6 @@ class ServiceUtils {
           sanitized[key] = sanitizedList;
         }
       } else {
-        // Keep primitive values as-is
         sanitized[key] = value;
       }
     }
@@ -206,19 +181,16 @@ class ServiceUtils {
     return sanitized;
   }
 
-  /// Check if data structure is empty or has meaningful content
   static bool hasStoredData(Map<String, dynamic>? data) {
     if (data == null || data.isEmpty) {
       return false;
     }
 
-    // Check if risk settings exist and are valid
     final riskSettings = data['riskSettings'] as Map<String, dynamic>?;
     if (riskSettings != null && riskSettings.isNotEmpty) {
       return true;
     }
 
-    // Check if trades exist
     final trades = data['trades'] as List?;
     if (trades != null && trades.isNotEmpty) {
       return true;
@@ -227,7 +199,6 @@ class ServiceUtils {
     return false;
   }
 
-  /// Merge multiple backup data sources (prefer most recent)
   static Map<String, dynamic> mergeBackupData(
     List<Map<String, dynamic>> backupSources,
   ) {
@@ -239,7 +210,6 @@ class ServiceUtils {
       return backupSources.first;
     }
 
-    // Sort by timestamp (most recent first)
     final sortedSources = List<Map<String, dynamic>>.from(backupSources);
     sortedSources.sort((a, b) {
       final timestampA = a['timestamp'] as String?;
@@ -252,16 +222,14 @@ class ServiceUtils {
       try {
         final dateA = DateTimeUtils.fromIso8601(timestampA);
         final dateB = DateTimeUtils.fromIso8601(timestampB);
-        return dateB.compareTo(dateA); // Most recent first
+        return dateB.compareTo(dateA); 
       } catch (e) {
         return 0;
       }
     });
 
-    // Use the most recent as base
     final merged = Map<String, dynamic>.from(sortedSources.first);
 
-    // Merge trades from all sources
     final allTrades = <Map<String, dynamic>>[];
     final seenTrades = <String>{};
 
@@ -270,7 +238,6 @@ class ServiceUtils {
       if (trades != null) {
         for (final trade in trades) {
           if (trade is Map<String, dynamic>) {
-            // Use timestamp + result as unique identifier
             final tradeKey = '${trade['timestamp']}_${trade['result']}';
             if (!seenTrades.contains(tradeKey)) {
               allTrades.add(trade);
@@ -291,7 +258,6 @@ class ServiceUtils {
     return merged;
   }
 
-  /// Create minimal backup with only essential data
   static Map<String, dynamic> createMinimalBackup({
     required List<Trade> trades,
     required RiskManagement riskSettings,
@@ -317,7 +283,6 @@ class ServiceUtils {
     };
   }
 
-  /// Log service operation with consistent formatting
   static void logServiceOperation(
     String serviceName,
     String operation,
@@ -336,10 +301,8 @@ class ServiceUtils {
       buffer.write(' | Error: $error');
     }
 
-    debugPrint(buffer.toString());
   }
 
-  /// Safe async operation wrapper for services
   static Future<ErrorResult<T>> safeServiceOperation<T>(
     String serviceName,
     String operationName,
@@ -370,7 +333,6 @@ class ServiceUtils {
     }
   }
 
-  /// Retry operation with exponential backoff
   static Future<T> retryOperation<T>(
     String operationName,
     Future<T> Function() operation, {
@@ -387,31 +349,24 @@ class ServiceUtils {
         lastException = e is Exception ? e : Exception(e.toString());
 
         if (i < maxRetries - 1) {
-          debugPrint(
-            '$operationName failed (attempt ${i + 1}), retrying in ${delay.inMilliseconds}ms: $e',
-          );
           await Future.delayed(delay);
-          delay *= 2; // Exponential backoff
+          delay *= 2; 
         }
       }
     }
 
-    debugPrint('$operationName failed after $maxRetries attempts');
     throw lastException!;
   }
 
-  /// Get storage size estimate in bytes
   static int estimateStorageSize(Map<String, dynamic> data) {
     try {
       final jsonString = jsonEncode(data);
       return jsonString.length;
     } catch (e) {
-      debugPrint('Failed to estimate storage size: $e');
       return 0;
     }
   }
 
-  /// Format storage size for display
   static String formatStorageSize(int bytes) {
     if (bytes < 1024) {
       return '$bytes B';
@@ -422,7 +377,6 @@ class ServiceUtils {
     }
   }
 
-  /// Create service status report
   static Map<String, dynamic> createServiceStatusReport({
     required String serviceName,
     required bool isInitialized,
@@ -440,42 +394,34 @@ class ServiceUtils {
   }
 }
 
-/// Service initialization helper
 class ServiceInitializationHelper {
   static const Duration _initializationTimeout = Duration(seconds: 30);
 
-  /// Initialize service with timeout and error handling
   static Future<ErrorResult<T>> initializeService<T>(
     String serviceName,
     Future<T> Function() initializer,
   ) async {
     try {
-      debugPrint('[$serviceName] Initializing...');
 
       final result = await initializer().timeout(_initializationTimeout);
 
-      debugPrint('[$serviceName] ✓ Initialized successfully');
       return ErrorResult.success(result);
     } on TimeoutException {
       final error = ServiceException(
         'Service initialization timeout after ${_initializationTimeout.inSeconds}s',
         code: 'INITIALIZATION_TIMEOUT',
       );
-      debugPrint('[$serviceName] ✗ Initialization timeout');
       return ErrorResult.error(error);
     } catch (e, stackTrace) {
-      debugPrint('[$serviceName] ✗ Initialization failed: $e');
       return ErrorResult.error(e, stackTrace);
     }
   }
 
-  /// Initialize multiple services concurrently
   static Future<Map<String, ErrorResult<dynamic>>> initializeServices(
     Map<String, Future<dynamic> Function()> services,
   ) async {
     final results = <String, ErrorResult<dynamic>>{};
 
-    // Initialize all services concurrently
     final futures = services.entries.map((entry) async {
       final serviceName = entry.key;
       final initializer = entry.value;
@@ -488,13 +434,6 @@ class ServiceInitializationHelper {
     for (final entry in completedResults) {
       results[entry.key] = entry.value;
     }
-
-    // Log summary
-    final successful = results.values.where((r) => r.isSuccess).length;
-    final total = results.length;
-    debugPrint(
-      'Service initialization complete: $successful/$total successful',
-    );
 
     return results;
   }
