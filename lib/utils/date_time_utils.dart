@@ -219,6 +219,7 @@ class DateTimeUtils {
               }
             }
           } catch (e) {
+            rethrow;
           }
         }
       }

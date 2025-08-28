@@ -227,10 +227,6 @@ class DialogViewModel extends ChangeNotifier {
     }
   }
 
-  @override
-  void dispose() {
-    super.dispose();
-  }
 }
 
 enum DialogType { maxDrawdown, lossPerTrade, tradeResult }

@@ -1,11 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:html' as html;
-import 'package:flutter/foundation.dart';
 import '../model/risk_management.dart';
 
 class PlatformPersistence {
-  static const String _debugPrefix = '[WebPersistence]';
 
   static Future<int> saveToWebStorage({
     required String backupPrefix,
@@ -21,12 +19,14 @@ class PlatformPersistence {
       );
       successCount++;
     } catch (e) {
+      rethrow;
     }
 
     try {
       html.window.sessionStorage['${backupPrefix}data'] = jsonString;
       successCount++;
     } catch (e) {
+      rethrow;
     }
 
     return successCount;
@@ -53,6 +53,7 @@ class PlatformPersistence {
         };
       }
     } catch (e) {
+      rethrow;
     }
 
     try {
@@ -62,6 +63,7 @@ class PlatformPersistence {
         return data;
       }
     } catch (e) {
+      rethrow;
     }
 
     return null;
@@ -103,11 +105,13 @@ class PlatformPersistence {
     try {
       html.window.localStorage.remove('${backupPrefix}data');
     } catch (e) {
+      rethrow;
     }
 
     try {
       html.window.sessionStorage.remove('${backupPrefix}data');
     } catch (e) {
+      rethrow;
     }
   }
 }

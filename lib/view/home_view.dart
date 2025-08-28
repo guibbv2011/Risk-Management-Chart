@@ -176,7 +176,7 @@ class _HomeViewState extends State<HomeView> with SignalsMixin {
           .toStringAsFixed(0),
     );
     _showInputDialog(
-      onConfirm: (value, _, [__]) async {
+      onConfirm: (value, _, [_]) async {
         await widget.viewModel.updateLossPerTrade(value);
       },
     );
@@ -185,7 +185,7 @@ class _HomeViewState extends State<HomeView> with SignalsMixin {
   void _showAddTradeDialog() {
     _dialogViewModel.openTradeResultDialog();
     _showInputDialog(
-      onConfirm: (value, _, [__]) async {
+      onConfirm: (value, _, [_]) async {
         await widget.viewModel.addTrade(value);
       },
     );

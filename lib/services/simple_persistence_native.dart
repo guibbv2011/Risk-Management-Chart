@@ -2,7 +2,6 @@ import 'dart:async';
 import '../model/risk_management.dart';
 
 class PlatformPersistence {
-  static const String _debugPrefix = '[NativePersistence]';
 
   static Future<int> saveToWebStorage({
     required String backupPrefix,

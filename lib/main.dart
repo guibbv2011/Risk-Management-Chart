@@ -42,10 +42,10 @@ class MyApp extends StatelessWidget {
   Future<void> _initializeApp() async {
     try {
       await AppStorageManager.initialize();
-      final startupData = await SimplePersistenceFix.checkStartupData();
+      await SimplePersistenceFix.checkStartupData();
       final hasData = await AppStorageManager.instance.hasStoredData();
 
-      final storageInfo = await AppStorageManager.instance.getStorageInfo();
+      await AppStorageManager.instance.getStorageInfo();
 
       final recoveredData = await SimplePersistenceFix.tryRecoverData();
 
@@ -63,14 +63,14 @@ class MyApp extends StatelessWidget {
 
           }
         } catch (e) {
-
+          rethrow;
         }
       } else if (hasData && recoveredData != null) {
 
       } else {
       }
 
-      final finalHasData = await AppStorageManager.instance.hasStoredData();
+      await AppStorageManager.instance.hasStoredData();
 
     } catch (e) {
       if (kIsWeb) {
@@ -140,6 +140,7 @@ class _RiskManagementScreenState extends State<RiskManagementScreen> {
         }
 
       } catch (e) {
+        rethrow;
       }
     });
   }

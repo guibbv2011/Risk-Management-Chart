@@ -100,7 +100,7 @@ class _InitializationScreenState extends State<InitializationScreen> {
               const SizedBox(
                 height: 16,
 
-                child: const Icon(
+                child: Icon(
                   Icons.trending_up,
                   size: 40,
                   color: Colors.deepPurpleAccent,

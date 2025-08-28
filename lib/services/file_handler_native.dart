@@ -65,6 +65,7 @@ class NativeFileHandler implements FileHandler {
               return downloadDir;
             }
           } catch (e) {
+            rethrow;
           }
           return await getApplicationDocumentsDirectory();
 
@@ -86,6 +87,7 @@ class NativeFileHandler implements FileHandler {
               }
             }
           } catch (e) {
+            rethrow;
           }
           return await getApplicationSupportDirectory();
 

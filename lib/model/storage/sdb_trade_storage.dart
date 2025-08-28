@@ -450,12 +450,4 @@ class SdbTradeStorage implements TradeStorage {
       timestamp: DateTimeUtils.fromIso8601(data['timestamp'] as String),
     );
   }
-
-  String _getPlatformInfo() {
-    if (kIsWeb) {
-      return 'Web (IndexedDB)';
-    } else {
-      return '${Platform.operatingSystem} (SQLite via IndexedDB API)';
-    }
-  }
 }

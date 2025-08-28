@@ -11,7 +11,6 @@ import 'simple_persistence_web.dart'
 
 class SimplePersistenceFix {
   static const String _backupPrefix = 'backup_';
-  static const String _debugPrefix = '[SimplePersistenceFix]';
 
   static Future<bool> forceSaveData({
     required RiskManagement riskSettings,
@@ -33,6 +32,7 @@ class SimplePersistenceFix {
       await prefs.setString('risk_settings', jsonEncode(riskSettings.toJson()));
       successCount++;
     } catch (e) {
+      rethrow;
     }
 
     if (kIsWeb) {
@@ -49,7 +49,6 @@ class SimplePersistenceFix {
   }
 
   static Future<Map<String, dynamic>?> tryRecoverData() async {
-
     int sourcesChecked = 0;
     int sourcesWithData = 0;
 
@@ -77,6 +76,7 @@ class SimplePersistenceFix {
       }
 
     } catch (e) {
+      rethrow;
     }
 
     if (kIsWeb) {
@@ -154,6 +154,7 @@ class SimplePersistenceFix {
             final settings = jsonDecode(riskData);
             result['sources']['sharedPreferences']['riskSettingsData'] = settings;
           } catch (e) {
+            rethrow;
           }
         }
       }
@@ -165,6 +166,7 @@ class SimplePersistenceFix {
             final backup = jsonDecode(backupData);
             result['sources']['sharedPreferences']['backupData'] = backup;
           } catch (e) {
+            rethrow;
           }
         }
       }
@@ -282,6 +284,7 @@ class SimplePersistenceFix {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove('${_backupPrefix}data');
     } catch (e) {
+      rethrow;
     }
 
     if (kIsWeb) {

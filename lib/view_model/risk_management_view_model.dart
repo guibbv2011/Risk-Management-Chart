@@ -447,6 +447,7 @@ class RiskManagementViewModel extends ChangeNotifier {
         trades: trades,
       );
     } catch (e) {
+      rethrow;
     }
   }
 
@@ -519,10 +520,6 @@ class RiskManagementViewModel extends ChangeNotifier {
     }
   }
 
-  @override
-  void dispose() {
-    super.dispose();
-  }
 }
 
 class ChartData {
