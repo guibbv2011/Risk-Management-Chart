@@ -77,7 +77,6 @@ class _InputDialogState extends State<InputDialog> with SignalsMixin {
               mainAxisSize: MainAxisSize.max,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Help text
                 Watch((_) {
                   return Text(
                     widget.viewModel.getValidationHelpText(),
@@ -86,7 +85,6 @@ class _InputDialogState extends State<InputDialog> with SignalsMixin {
                 }),
                 const SizedBox(height: 16),
 
-                // Account Balance field (only for Max Drawdown dialog)
                 Watch((_) {
                   if (widget.viewModel.dialogType.value ==
                       DialogType.maxDrawdown) {
@@ -165,7 +163,6 @@ class _InputDialogState extends State<InputDialog> with SignalsMixin {
                   return const SizedBox.shrink();
                 }),
 
-                // Dynamic Max Drawdown Toggle (only for Max Drawdown dialog)
                 Watch((_) {
                   if (widget.viewModel.dialogType.value ==
                       DialogType.maxDrawdown) {
@@ -219,7 +216,7 @@ class _InputDialogState extends State<InputDialog> with SignalsMixin {
                                     value,
                                   );
                                 },
-                                activeColor: Colors.deepPurpleAccent,
+                                activeThumbColor: Colors.deepPurpleAccent,
                                 inactiveThumbColor: Colors.grey.shade400,
                                 inactiveTrackColor: Colors.grey.shade600,
                               ),
@@ -233,7 +230,6 @@ class _InputDialogState extends State<InputDialog> with SignalsMixin {
                   return const SizedBox.shrink();
                 }),
 
-                // Max Drawdown Input field
                 Watch((_) {
                   if (widget.viewModel.dialogType.value ==
                       DialogType.maxDrawdown) {
@@ -255,7 +251,6 @@ class _InputDialogState extends State<InputDialog> with SignalsMixin {
                   return const SizedBox.shrink();
                 }),
 
-                // Input field
                 Watch((_) {
                   return TextField(
                     controller: _controller,
@@ -310,7 +305,6 @@ class _InputDialogState extends State<InputDialog> with SignalsMixin {
                   );
                 }),
 
-                // Additional info based on dialog type
                 Watch((_) {
                   return _buildAdditionalInfo();
                 }),
@@ -319,13 +313,11 @@ class _InputDialogState extends State<InputDialog> with SignalsMixin {
           ),
         ),
         actions: [
-          // Cancel button
           TextButton(
             onPressed: _isProcessing ? null : () => Navigator.of(context).pop(),
             child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
           ),
 
-          // Confirm button
           Watch((_) {
             return ElevatedButton(
               onPressed: _isProcessing ? null : _handleConfirm,
@@ -350,8 +342,6 @@ class _InputDialogState extends State<InputDialog> with SignalsMixin {
           }),
         ],
       ),
-      // ),
-      // ),
     );
   }
 
@@ -392,9 +382,9 @@ class _InputDialogState extends State<InputDialog> with SignalsMixin {
           margin: const EdgeInsets.only(top: 12),
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: Colors.blue.withOpacity(0.1),
+            color: Colors.blue.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.blue.withOpacity(0.3)),
+            border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
           ),
           child: Row(
             children: [
@@ -415,9 +405,9 @@ class _InputDialogState extends State<InputDialog> with SignalsMixin {
           margin: const EdgeInsets.only(top: 12),
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: Colors.orange.withOpacity(0.1),
+            color: Colors.orange.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.orange.withOpacity(0.3)),
+            border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
           ),
           child: Row(
             children: [
@@ -438,9 +428,9 @@ class _InputDialogState extends State<InputDialog> with SignalsMixin {
           margin: const EdgeInsets.only(top: 12),
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: Colors.green.withOpacity(0.1),
+            color: Colors.green.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.green.withOpacity(0.3)),
+            border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
           ),
           child: Row(
             children: [
@@ -469,7 +459,6 @@ class _InputDialogState extends State<InputDialog> with SignalsMixin {
     });
 
     try {
-      // For Max Drawdown dialog, also pass the account balance and toggle state
       if (widget.viewModel.dialogType.value == DialogType.maxDrawdown) {
         final accountBalance = widget.viewModel.getAccountBalanceValue();
         await widget.onConfirm(

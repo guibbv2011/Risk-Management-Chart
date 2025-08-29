@@ -4,6 +4,7 @@ class RiskManagement {
   final double accountBalance;
   final double currentBalance;
   final bool isDynamicMaxDrawdown;
+  final double currentDrawdownThreshold;
 
   RiskManagement({
     required this.maxDrawdown,
@@ -11,36 +12,32 @@ class RiskManagement {
     required this.accountBalance,
     double? currentBalance,
     this.isDynamicMaxDrawdown = false,
-  }) : currentBalance = currentBalance ?? accountBalance;
+    double? currentDrawdownThreshold,
+  })  : currentBalance = currentBalance ?? accountBalance,
+        currentDrawdownThreshold = currentDrawdownThreshold ?? -maxDrawdown;
 
-  /// Calculate maximum loss per trade based on percentage of remaining risk capacity
   double get maxLossPerTrade {
     return (remainingRiskCapacity * lossPerTradePercentage) / 100;
   }
 
-  /// Maximum drawdown is the absolute amount (not percentage)
   double get maxDrawdownAmount {
     return maxDrawdown;
   }
 
-  /// Calculate current drawdown from initial account balance
   double get currentDrawdownAmount {
     final drawdown = accountBalance - currentBalance;
     return drawdown > 0 ? drawdown : 0;
   }
 
-  /// Calculate remaining risk capacity based on current drawdown
   double get remainingRiskCapacity {
     final effectiveMaxDrawdown = _getEffectiveMaxDrawdown();
     final remaining = effectiveMaxDrawdown - currentDrawdownAmount.abs();
     return remaining > 0 ? remaining : 0;
   }
 
-  /// Get effective max drawdown based on dynamic setting
   double _getEffectiveMaxDrawdown() {
     if (!isDynamicMaxDrawdown) return maxDrawdown;
 
-    // If current balance is higher than initial balance, increase max drawdown
     if (currentBalance > accountBalance) {
       final profitBuffer = currentBalance - accountBalance;
       return maxDrawdown + profitBuffer;
@@ -49,19 +46,14 @@ class RiskManagement {
     return maxDrawdown;
   }
 
-  /// Check if a trade exceeds risk limits
-  /// Only check limits for losing trades (negative values)
   bool isTradeWithinRiskLimits(double tradeAmount) {
-    // Allow unlimited profits (positive trades)
     if (tradeAmount > 0) return true;
 
-    // Check if loss exceeds max loss per trade
     return tradeAmount.abs() <= maxLossPerTrade;
   }
 
-  /// Check if adding a trade would exceed maximum drawdown
   bool wouldExceedMaxDrawdown(double tradeAmount) {
-    if (tradeAmount >= 0) return false; // Profits never exceed drawdown
+    if (tradeAmount >= 0) return false; 
 
     double projectedBalance = currentBalance + tradeAmount;
     double projectedDrawdown = accountBalance - projectedBalance;
@@ -70,19 +62,16 @@ class RiskManagement {
     return projectedDrawdown > effectiveMaxDrawdown;
   }
 
-  /// Calculate risk-reward ratio
   double calculateRiskRewardRatio(double riskAmount, double rewardAmount) {
     if (riskAmount == 0) return 0;
     return rewardAmount / riskAmount;
   }
 
-  /// Calculate win rate needed for profitability
   double calculateRequiredWinRate(double averageWin, double averageLoss) {
     if (averageWin + averageLoss.abs() == 0) return 0;
     return averageLoss.abs() / (averageWin + averageLoss.abs());
   }
 
-  /// Calculate position size based on risk percentage
   double calculatePositionSize(double entryPrice, double stopLoss) {
     if (entryPrice == 0 || stopLoss == 0) return 0;
     double riskPerUnit = (entryPrice - stopLoss).abs();
@@ -90,7 +79,6 @@ class RiskManagement {
     return maxLossPerTrade / riskPerUnit;
   }
 
-  /// Update balance after a trade
   RiskManagement updateBalance(double tradeResult) {
     return copyWith(currentBalance: currentBalance + tradeResult);
   }
@@ -101,6 +89,7 @@ class RiskManagement {
     double? accountBalance,
     double? currentBalance,
     bool? isDynamicMaxDrawdown,
+    double? currentDrawdownThreshold,
   }) {
     return RiskManagement(
       maxDrawdown: maxDrawdown ?? this.maxDrawdown,
@@ -109,6 +98,7 @@ class RiskManagement {
       accountBalance: accountBalance ?? this.accountBalance,
       currentBalance: currentBalance ?? this.currentBalance,
       isDynamicMaxDrawdown: isDynamicMaxDrawdown ?? this.isDynamicMaxDrawdown,
+      currentDrawdownThreshold: currentDrawdownThreshold ?? this.currentDrawdownThreshold,
     );
   }
 
@@ -119,17 +109,20 @@ class RiskManagement {
       'accountBalance': accountBalance,
       'currentBalance': currentBalance,
       'isDynamicMaxDrawdown': isDynamicMaxDrawdown,
+      'currentDrawdownThreshold': currentDrawdownThreshold,
     };
   }
 
   factory RiskManagement.fromJson(Map<String, dynamic> json) {
+    final maxDD = (json['maxDrawdown'] as num).toDouble();
     return RiskManagement(
-      maxDrawdown: (json['maxDrawdown'] as num).toDouble(),
+      maxDrawdown: maxDD,
       lossPerTradePercentage: (json['lossPerTradePercentage'] as num)
           .toDouble(),
       accountBalance: (json['accountBalance'] as num).toDouble(),
       currentBalance: (json['currentBalance'] as num?)?.toDouble(),
       isDynamicMaxDrawdown: json['isDynamicMaxDrawdown'] as bool? ?? false,
+      currentDrawdownThreshold: (json['currentDrawdownThreshold'] as num?)?.toDouble() ?? -maxDD,
     );
   }
 
@@ -141,7 +134,8 @@ class RiskManagement {
         other.lossPerTradePercentage == lossPerTradePercentage &&
         other.accountBalance == accountBalance &&
         other.currentBalance == currentBalance &&
-        other.isDynamicMaxDrawdown == isDynamicMaxDrawdown;
+        other.isDynamicMaxDrawdown == isDynamicMaxDrawdown &&
+        other.currentDrawdownThreshold == currentDrawdownThreshold;
   }
 
   @override
@@ -151,6 +145,7 @@ class RiskManagement {
         accountBalance,
         currentBalance,
         isDynamicMaxDrawdown,
+        currentDrawdownThreshold,
       );
 
   @override

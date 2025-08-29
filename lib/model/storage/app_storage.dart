@@ -1,10 +1,8 @@
-import 'package:flutter/foundation.dart';
 import 'storage_interface.dart';
 import 'shared_preferences_config_storage.dart';
 import 'storage_factory.dart';
 import '../risk_management.dart';
 
-/// Combined storage implementation that manages both config and trade storage
 class AppStorageImpl implements AppStorage {
   late final SharedPreferencesConfigStorage _configStorage;
   late final TradeStorage _tradeStorage;
@@ -23,21 +21,9 @@ class AppStorageImpl implements AppStorage {
   @override
   Future<void> initialize() async {
     try {
-      debugPrint('AppStorage: Starting initialization...');
-
-      // Initialize trade storage (database)
-      debugPrint('AppStorage: Initializing trade storage...');
       await _tradeStorage.initializeDatabase();
-      debugPrint('AppStorage: Trade storage initialized successfully');
-
-      // Check if config migration is needed
-      debugPrint('AppStorage: Checking config migration...');
       await _configStorage.migrateIfNeeded();
-      debugPrint('AppStorage: Config migration check completed');
-
-      debugPrint('AppStorage: Initialization completed successfully');
     } catch (e) {
-      debugPrint('AppStorage: Initialization failed - ${e.toString()}');
       throw StorageException(
         'Failed to initialize app storage: ${e.toString()}',
       );
@@ -48,13 +34,11 @@ class AppStorageImpl implements AppStorage {
   Future<void> close() async {
     try {
       await _tradeStorage.close();
-      // Config storage (SharedPreferences) doesn't need explicit closing
     } catch (e) {
       throw StorageException('Failed to close app storage: ${e.toString()}');
     }
   }
 
-  /// Clear all application data
   Future<void> clearAllData() async {
     try {
       await _tradeStorage.clearAllTrades();
@@ -64,7 +48,6 @@ class AppStorageImpl implements AppStorage {
     }
   }
 
-  /// Check if the app has any stored data
   Future<bool> hasStoredData() async {
     try {
       final hasConfig = await _configStorage.hasRiskSettings();
@@ -75,7 +58,6 @@ class AppStorageImpl implements AppStorage {
     }
   }
 
-  /// Get storage info for debugging
   Future<Map<String, dynamic>> getStorageInfo() async {
     try {
       final hasConfig = await _configStorage.hasRiskSettings();
@@ -94,7 +76,6 @@ class AppStorageImpl implements AppStorage {
     }
   }
 
-  /// Export all data for backup
   Future<Map<String, dynamic>> exportAllData() async {
     try {
       final riskSettings = await _configStorage.loadRiskSettings();
@@ -111,13 +92,10 @@ class AppStorageImpl implements AppStorage {
     }
   }
 
-  /// Import data from backup
   Future<void> importAllData(Map<String, dynamic> data) async {
     try {
-      // Clear existing data first
       await clearAllData();
 
-      // Import risk settings if available
       if (data['riskSettings'] != null) {
         final riskSettings = RiskManagement.fromJson(
           data['riskSettings'] as Map<String, dynamic>,
@@ -125,7 +103,6 @@ class AppStorageImpl implements AppStorage {
         await _configStorage.saveRiskSettings(riskSettings);
       }
 
-      // Import trades if available
       if (data['trades'] != null) {
         final tradesData = (data['trades'] as List)
             .cast<Map<String, dynamic>>();
@@ -137,7 +114,6 @@ class AppStorageImpl implements AppStorage {
   }
 }
 
-/// Singleton instance for app storage
 class AppStorageManager {
   static AppStorageImpl? _instance;
 
@@ -146,15 +122,11 @@ class AppStorageManager {
     return _instance!;
   }
 
-  /// Initialize the storage manager
   static Future<void> initialize() async {
-    if (_instance == null) {
-      _instance = AppStorageImpl();
-    }
+    _instance ??= AppStorageImpl();
     await _instance!.initialize();
   }
 
-  /// Close the storage manager
   static Future<void> close() async {
     if (_instance != null) {
       await _instance!.close();
@@ -163,7 +135,6 @@ class AppStorageManager {
   }
 }
 
-/// Custom exception for storage operations
 class StorageException implements Exception {
   final String message;
   StorageException(this.message);

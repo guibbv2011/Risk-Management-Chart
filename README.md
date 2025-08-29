@@ -11,6 +11,7 @@ This project was created for traders who need to monitor their account balance w
 ### 📊 Real-Time Trading Dashboard
 - **Interactive P&L Chart**: Visual representation of cumulative profit/loss over time
 - **Dynamic Balance Tracking**: Real-time account balance updates after each trade
+- **Trailing Drawdown Feature**: Your drawdown limits are dynamically adjusted based on trading performance.
 - **Risk Status Indicator**: Color-coded risk levels (Low, Medium, High, Critical)
 
 ### 🛡️ Advanced Risk Management
@@ -121,8 +122,7 @@ TODO:
 
 Free Version:
 - [x] - Add data dynamically, from the floating action button, which opens a text entry.
-- [ ] - Zoom in/out on the X and Y axes.
-- [ ] - Select range for visualization.
+- [x] - Zoom in/out on the X and Y axes.
 - [x] - Store data on the local disk automatically.
       - Native storage implementation
       - Mobile storage implementation
@@ -130,8 +130,7 @@ Free Version:
       - All user data automatically saved and loaded
 
 Paid Version:
-- [ ] - Add subscription model for premium users.
-- [ ] - Integrate payment gateway for secure transactions.
-- [ ] - Sign in with Google or X.
-- [ ] - Connect to brokers, our app will handle multiple accounts of all connected brokers.
-- [ ] - Implement advanced risk management strategies like realtime tracking of opened positions, daily loss, daily profit, and trailing stops.
+- [ ] - Add ads.
+- [ ] - Add payment to remove ads
+OR:
+- [ ] - Monthly/Annual Subscription

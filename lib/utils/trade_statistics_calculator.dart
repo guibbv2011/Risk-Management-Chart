@@ -1,9 +1,7 @@
 import '../model/trade.dart';
 
-/// Utility class for calculating trade statistics
-/// Eliminates duplicated code across repository implementations
+
 class TradeStatisticsCalculator {
-  /// Calculate total profit/loss from a list of trades
   static double calculateTotalPnL(List<Trade> trades) {
     if (trades.isEmpty) return 0.0;
 
@@ -14,7 +12,6 @@ class TradeStatisticsCalculator {
     return total;
   }
 
-  /// Calculate current drawdown from a list of trades
   static double calculateCurrentDrawdown(List<Trade> trades) {
     if (trades.isEmpty) return 0.0;
 
@@ -36,24 +33,20 @@ class TradeStatisticsCalculator {
     return maxDrawdown;
   }
 
-  /// Count winning trades (positive results)
   static int calculateWinCount(List<Trade> trades) {
     return trades.where((trade) => trade.result > 0).length;
   }
 
-  /// Count losing trades (negative results)
   static int calculateLossCount(List<Trade> trades) {
     return trades.where((trade) => trade.result < 0).length;
   }
 
-  /// Calculate win rate as percentage
   static double calculateWinRate(List<Trade> trades) {
     if (trades.isEmpty) return 0.0;
     final winCount = calculateWinCount(trades);
     return (winCount / trades.length) * 100;
   }
 
-  /// Calculate average win amount
   static double calculateAverageWin(List<Trade> trades) {
     final wins = trades.where((trade) => trade.result > 0).toList();
     if (wins.isEmpty) return 0.0;
@@ -65,7 +58,6 @@ class TradeStatisticsCalculator {
     return total / wins.length;
   }
 
-  /// Calculate average loss amount
   static double calculateAverageLoss(List<Trade> trades) {
     final losses = trades.where((trade) => trade.result < 0).toList();
     if (losses.isEmpty) return 0.0;
@@ -77,7 +69,6 @@ class TradeStatisticsCalculator {
     return total / losses.length;
   }
 
-  /// Calculate all statistics at once for efficiency
   static TradeStatistics calculateAllStatistics(List<Trade> trades) {
     if (trades.isEmpty) {
       return TradeStatistics(
@@ -96,7 +87,6 @@ class TradeStatisticsCalculator {
       );
     }
 
-    // Single pass calculations for efficiency
     double totalPnL = 0.0;
     int winCount = 0;
     int lossCount = 0;
@@ -105,7 +95,6 @@ class TradeStatisticsCalculator {
     double bestWin = double.negativeInfinity;
     double worstLoss = double.infinity;
 
-    // Calculate running values
     for (final trade in trades) {
       totalPnL += trade.result;
 
@@ -124,16 +113,13 @@ class TradeStatisticsCalculator {
       }
     }
 
-    // Calculate derived statistics
     final winRate = (winCount / trades.length) * 100;
     final averageWin = winCount > 0 ? totalWins / winCount : 0.0;
     final averageLoss = lossCount > 0 ? totalLosses / lossCount : 0.0;
     final currentDrawdown = calculateCurrentDrawdown(trades);
 
-    // Profit factor: total wins / absolute total losses
     final profitFactor = totalLosses != 0 ? totalWins / totalLosses.abs() : 0.0;
 
-    // Risk-reward ratio: average win / absolute average loss
     final riskRewardRatio = averageLoss != 0
         ? averageWin / averageLoss.abs()
         : 0.0;
@@ -154,7 +140,6 @@ class TradeStatisticsCalculator {
     );
   }
 
-  /// Filter trades by date range
   static List<Trade> filterTradesByDateRange(
     List<Trade> trades,
     DateTime start,
@@ -171,7 +156,6 @@ class TradeStatisticsCalculator {
         .toList();
   }
 
-  /// Get trades sorted by timestamp
   static List<Trade> getSortedTrades(
     List<Trade> trades, {
     bool ascending = true,
@@ -185,14 +169,12 @@ class TradeStatisticsCalculator {
     return sortedTrades;
   }
 
-  /// Get recent trades (most recent first)
   static List<Trade> getRecentTrades(List<Trade> trades, {int limit = 10}) {
     final sortedTrades = getSortedTrades(trades, ascending: false);
     return sortedTrades.take(limit).toList();
   }
 }
 
-/// Data class for holding all trade statistics
 class TradeStatistics {
   final int totalTrades;
   final double totalPnL;

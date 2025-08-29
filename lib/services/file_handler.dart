@@ -1,29 +1,22 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 
-// Conditional imports for platform-specific file handling
 import 'file_handler_web.dart' if (dart.library.io) 'file_handler_native.dart';
 
-/// Abstract interface for file operations
 abstract class FileHandler {
-  /// Save data to a file
   Future<bool> saveFile(String fileName, String data);
 
-  /// Pick and read a file
   Future<String?> pickAndReadFile();
 
-  /// Check if file operations are supported on current platform
   bool get isSupported;
 }
 
-/// Factory to create appropriate file handler for current platform
 class FileHandlerFactory {
   static FileHandler create() {
     return createFileHandler();
   }
 }
 
-/// Export data model
 class ExportData {
   final String version;
   final DateTime exportDate;
@@ -73,16 +66,13 @@ class ExportData {
   }
 }
 
-/// File service for handling export/import operations
 class FileService {
   final FileHandler _fileHandler;
 
   FileService() : _fileHandler = FileHandlerFactory.create();
 
-  /// Check if file operations are supported
   bool get isSupported => _fileHandler.isSupported;
 
-  /// Export data to file
   Future<bool> exportData(ExportData data) async {
     if (!isSupported) {
       throw UnsupportedError('File operations not supported on this platform');
@@ -94,12 +84,10 @@ class FileService {
 
       return await _fileHandler.saveFile(fileName, jsonString);
     } catch (e) {
-      debugPrint('Export failed: $e');
       return false;
     }
   }
 
-  /// Import data from file
   Future<ExportData?> importData() async {
     if (!isSupported) {
       throw UnsupportedError('File operations not supported on this platform');
@@ -108,31 +96,26 @@ class FileService {
     try {
       final jsonString = await _fileHandler.pickAndReadFile();
       if (jsonString == null) {
-        return null; // User cancelled file selection
+        return null; 
       }
 
       return ExportData.fromJsonString(jsonString);
     } catch (e) {
-      debugPrint('Import failed: $e');
       rethrow;
     }
   }
 
-  /// Generate export file name with timestamp
   String _generateExportFileName(DateTime exportDate) {
     final timestamp = exportDate.toIso8601String().split('T')[0];
     return 'risk_management_backup_$timestamp.json';
   }
 
-  /// Validate imported data
   bool validateImportData(ExportData data) {
     try {
-      // Check version compatibility
       if (data.version.isEmpty) {
         return false;
       }
 
-      // Check if trades data is valid
       if (data.trades.isNotEmpty) {
         for (final trade in data.trades) {
           if (!trade.containsKey('result') || !trade.containsKey('timestamp')) {
@@ -141,7 +124,6 @@ class FileService {
         }
       }
 
-      // Check risk settings if present
       if (data.riskSettings != null) {
         final required = [
           'maxDrawdown',
@@ -157,12 +139,10 @@ class FileService {
 
       return true;
     } catch (e) {
-      debugPrint('Data validation failed: $e');
       return false;
     }
   }
 
-  /// Get export preview information
   Map<String, dynamic> getExportPreview(ExportData data) {
     return {
       'version': data.version,

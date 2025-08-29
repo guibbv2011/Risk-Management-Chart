@@ -17,18 +17,15 @@ class _TradeListWidgetState extends State<TradeListWidget> with SignalsMixin {
   Widget build(BuildContext context) {
     return Container(
       height: MediaQuery.of(context).size.height,
-      padding: const EdgeInsets.all(12.0),
+      padding: const EdgeInsets.only(left: 18.0, right: 18),
       constraints: BoxConstraints(
         minHeight: MediaQuery.of(context).size.height,
         maxHeight: MediaQuery.of(context).size.height,
       ),
 
-      // color: Colors.amber,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        // mainAxisSize: MainAxisSize.max,
         children: [
-          // Header
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -36,7 +33,7 @@ class _TradeListWidgetState extends State<TradeListWidget> with SignalsMixin {
                 'Trade History',
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 18,
+                  fontSize: 14,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -49,31 +46,23 @@ class _TradeListWidgetState extends State<TradeListWidget> with SignalsMixin {
               }),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 4),
 
-          // Trade list
           Expanded(
             child: Watch((_) {
               final trades = widget.viewModel.trades.value;
               final riskSettings = widget.viewModel.riskSettings.value;
 
-              if (trades.isEmpty) {
-                return _buildEmptyState();
-              }
-
               return ListView.builder(
-                itemCount: trades.length + 1, // +1 for initial balance row
+                itemCount: trades.length + 1,
                 itemBuilder: (context, index) {
                   if (index == 0) {
-                    // Initial balance row (index 0)
                     return _buildInitialBalanceRow(riskSettings.accountBalance);
                   }
 
-                  // Trade rows - show in reverse order (latest first)
-                  final tradeIndex = trades.length - index; // Reverse the index
+                  final tradeIndex = trades.length - index;
                   final trade = trades[tradeIndex];
-                  final tradeNumber =
-                      tradeIndex + 1; // Chronological trade number
+                  final tradeNumber = tradeIndex + 1;
                   final runningBalance = _calculateRunningBalance(
                     trades,
                     tradeIndex,
@@ -84,7 +73,7 @@ class _TradeListWidgetState extends State<TradeListWidget> with SignalsMixin {
                     trade: trade,
                     tradeNumber: tradeNumber,
                     runningBalance: runningBalance,
-                    isLatest: index == 1, // First displayed trade is the latest
+                    isLatest: index == 1,
                   );
                 },
               );
@@ -95,107 +84,77 @@ class _TradeListWidgetState extends State<TradeListWidget> with SignalsMixin {
     );
   }
 
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.show_chart, size: 64, color: Colors.grey.shade600),
-          const SizedBox(height: 16),
-          Text(
-            'No trades yet',
-            style: TextStyle(
-              color: Colors.grey.shade400,
-              fontSize: 18,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Add your first trade to get started',
-            style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildInitialBalanceRow(double accountBalance) {
     return Container(
+      height: 65,
       margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.grey.shade900,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Colors.deepPurpleAccent.withOpacity(0.3),
+          color: Colors.deepPurpleAccent.withValues(alpha: 0.3),
           width: 1,
         ),
       ),
-      child: Row(
-        children: [
-          // Trade number
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: Colors.deepPurpleAccent.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: const Center(
-              child: Text(
-                '0',
-                style: TextStyle(
-                  color: Colors.deepPurpleAccent,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
+      child: Center(
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: Colors.deepPurpleAccent.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Center(
+                child: Text(
+                  '0',
+                  style: TextStyle(
+                    color: Colors.deepPurpleAccent,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
                 ),
               ),
             ),
-          ),
-          const SizedBox(width: 16),
+            const SizedBox(width: 16),
 
-          // Trade details
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Initial Balance',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16,
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Initial Balance',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Starting Point',
-                  style: TextStyle(color: Colors.grey.shade400, fontSize: 12),
-                ),
-              ],
+                  const SizedBox(height: 4),
+                  Text(
+                    'Starting Point',
+                    style: TextStyle(color: Colors.grey.shade400, fontSize: 10),
+                  ),
+                ],
+              ),
             ),
-          ),
 
-          // Balance
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                '\$${accountBalance.toStringAsFixed(2)}',
+            Tooltip(
+              message: 'Balance',
+              preferBelow: true,
+              child: Text(
+                '\$ ${accountBalance.toStringAsFixed(2)}',
                 style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
-                  fontSize: 16,
+                  fontSize: 12,
                 ),
               ),
-              Text(
-                'Balance',
-                style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
-              ),
-            ],
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -211,116 +170,120 @@ class _TradeListWidgetState extends State<TradeListWidget> with SignalsMixin {
     final icon = isProfit ? Icons.trending_up : Icons.trending_down;
 
     return Container(
+      height: 65,
       margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: isLatest
-            ? Colors.deepPurpleAccent.withOpacity(0.1)
+            ? Colors.deepPurpleAccent.withValues(alpha: 0.1)
             : Colors.grey.shade900,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isLatest
-              ? Colors.deepPurpleAccent.withOpacity(0.5)
+              ? Colors.deepPurpleAccent.withValues(alpha: 0.5)
               : Colors.grey.shade800,
           width: 1,
         ),
       ),
-      child: Row(
-        children: [
-          // Trade number
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Center(
-              child: Text(
-                '$tradeNumber',
-                style: TextStyle(
-                  color: color,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
+      child: Center(
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Center(
+                child: Text(
+                  '$tradeNumber',
+                  style: TextStyle(
+                    color: color,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
                 ),
               ),
             ),
-          ),
-          const SizedBox(width: 16),
+            const SizedBox(width: 16),
 
-          // Trade details
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Icon(icon, color: color, size: 16),
-                    const SizedBox(width: 4),
-                    Text(
-                      isProfit ? 'Profit' : 'Loss',
-                      style: TextStyle(
-                        color: color,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 16,
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(icon, color: color, size: 12),
+                      const SizedBox(width: 4),
+                      Text(
+                        isProfit ? 'Profit' : 'Loss',
+                        style: TextStyle(
+                          color: color,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 12,
+                        ),
                       ),
-                    ),
-                    if (isLatest) ...[
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 6,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.deepPurpleAccent,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: const Text(
-                          'LATEST',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
+                      if (isLatest) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.deepPurpleAccent,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: const Text(
+                            'LATEST',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 8,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
-                      ),
+                      ],
                     ],
-                  ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    _formatDateTime(trade.timestamp),
+                    style: TextStyle(color: Colors.grey.shade400, fontSize: 10),
+                  ),
+                ],
+              ),
+            ),
+
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Tooltip(
+                  message: 'Result',
+                  preferBelow: true,
+                  child: Text(
+                    '\$\ ${isProfit ? '+' : ''}${trade.result.toStringAsFixed(2)}',
+                    style: TextStyle(
+                      color: color,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                  ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  _formatDateTime(trade.timestamp),
-                  style: TextStyle(color: Colors.grey.shade400, fontSize: 12),
+                const SizedBox(height: 2),
+                Tooltip(
+                  message: 'Balance',
+                  preferBelow: true,
+                  child: Text(
+                    '\$ ${runningBalance.toStringAsFixed(2)}',
+                    style: const TextStyle(color: Colors.white, fontSize: 12),
+                  ),
                 ),
               ],
             ),
-          ),
-
-          // Trade result and running balance
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                '${isProfit ? '+' : ''}\$${trade.result.toStringAsFixed(2)}',
-                style: TextStyle(
-                  color: color,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                '\$${runningBalance.toStringAsFixed(2)}',
-                style: const TextStyle(color: Colors.white, fontSize: 14),
-              ),
-              Text(
-                'Balance',
-                style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
-              ),
-            ],
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
