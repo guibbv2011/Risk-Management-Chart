@@ -63,6 +63,7 @@ class _InitializationScreenState extends State<InitializationScreen> {
 
   Widget _buildLoadingScreen() {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       home: Scaffold(
         backgroundColor: Colors.black,
         body: Center(
@@ -95,55 +96,6 @@ class _InitializationScreenState extends State<InitializationScreen> {
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
                 ),
-              ),
-
-              const SizedBox(
-                height: 16,
-
-                child: Icon(
-                  Icons.trending_up,
-                  size: 40,
-                  color: Colors.deepPurpleAccent,
-                ),
-              ),
-
-              const SizedBox(height: 32),
-
-              const Text(
-                'Risk Management',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-
-              const SizedBox(height: 16),
-
-              const CircularProgressIndicator(
-                color: Colors.deepPurpleAccent,
-                strokeWidth: 3,
-              ),
-
-              const SizedBox(height: 16),
-
-              const Text(
-                'Initializing storage...',
-                style: TextStyle(color: Colors.white70, fontSize: 16),
-              ),
-
-              const SizedBox(height: 8),
-
-              Text(
-                'Platform: ${StorageInitializer.getPlatformInfo()}',
-                style: const TextStyle(color: Colors.grey, fontSize: 12),
-              ),
-
-              const SizedBox(height: 4),
-
-              const Text(
-                'Setting up local database and preferences',
-                style: TextStyle(color: Colors.grey, fontSize: 12),
               ),
             ],
           ),
