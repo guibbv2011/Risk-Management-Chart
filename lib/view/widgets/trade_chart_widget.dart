@@ -43,14 +43,14 @@ class _TradeChartWidgetState extends State<TradeChartWidget> with SignalsMixin {
           children: [
             SfCartesianChart(
               backgroundColor: Colors.black,
-              title: ChartTitle(
-                text: 'Trading Performance',
-                textStyle: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+              // title: ChartTitle(
+              //   text: 'Trading Performance',
+              //   textStyle: const TextStyle(
+              //     color: Colors.white,
+              //     fontSize: 16,
+              //     fontWeight: FontWeight.bold,
+              //   ),
+              // ),
               trackballBehavior: TrackballBehavior(
                 enable: true,
                 tooltipDisplayMode: TrackballDisplayMode.floatAllPoints,
@@ -149,7 +149,7 @@ class _TradeChartWidgetState extends State<TradeChartWidget> with SignalsMixin {
   double get minY {
     List<double> allY = [
       ...widget.viewModel.chartData.map((e) => e.y),
-      ...widget.viewModel.drawdownChartData.map((e) => e.y)
+      ...widget.viewModel.drawdownChartData.map((e) => e.y),
     ];
     return allY.isEmpty ? 0 : allY.reduce(math.min);
   }
@@ -157,7 +157,7 @@ class _TradeChartWidgetState extends State<TradeChartWidget> with SignalsMixin {
   double get maxY {
     List<double> allY = [
       ...widget.viewModel.chartData.map((e) => e.y),
-      ...widget.viewModel.drawdownChartData.map((e) => e.y)
+      ...widget.viewModel.drawdownChartData.map((e) => e.y),
     ];
     return allY.isEmpty ? 1 : allY.reduce(math.max);
   }
@@ -176,7 +176,8 @@ class _TradeChartWidgetState extends State<TradeChartWidget> with SignalsMixin {
 
   void _adjustXZoom(double factor) {
     double currentStart = (xRangeController.start).toDouble() ?? 0.0;
-    double currentEnd = (xRangeController.end).toDouble() ??
+    double currentEnd =
+        (xRangeController.end).toDouble() ??
         (widget.viewModel.chartData.isNotEmpty
             ? widget.viewModel.chartData.last.x.toDouble()
             : 1.0);
