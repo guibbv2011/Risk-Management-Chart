@@ -43,7 +43,7 @@ class _HomeViewState extends State<HomeView> with SignalsMixin {
       appBar: AppBar(
         backgroundColor: Colors.black,
         foregroundColor: Colors.deepPurpleAccent,
-        title: const Text('Risk Management App'),
+        title: const Text('Risk Management'),
         actions: [
           IconButton(
             icon: const Icon(Icons.info_outline),
@@ -64,7 +64,7 @@ class _HomeViewState extends State<HomeView> with SignalsMixin {
       ),
       body: Column(
         children: [
-              Watch((_) {
+          Watch((_) {
             final errorMessage = widget.viewModel.errorMessage.value;
             if (errorMessage != null) {
               return Container(
@@ -110,7 +110,9 @@ class _HomeViewState extends State<HomeView> with SignalsMixin {
                 vertical: 8.0,
                 horizontal: 16.0,
               ),
-              color: widget.viewModel.getRiskStatusColor().withValues(alpha: 0.1),
+              color: widget.viewModel.getRiskStatusColor().withValues(
+                alpha: 0.1,
+              ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -212,16 +214,12 @@ class _HomeViewState extends State<HomeView> with SignalsMixin {
             return const Text('Loading statistics...');
           }
 
-          return 
-          Column(
+          return Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildStatRow('Total Trades', stats.totalTrades.toString()),
-              _buildStatRow(
-                'Total P&L',
-                stats.totalPnL.toStringAsFixed(2),
-              ),
+              _buildStatRow('Total P&L', stats.totalPnL.toStringAsFixed(2)),
               _buildStatRow('Win Rate', '${stats.winRate.toStringAsFixed(1)}%'),
               _buildStatRow(
                 'Current Drawdown',
@@ -235,10 +233,7 @@ class _HomeViewState extends State<HomeView> with SignalsMixin {
                 'Remaining Risk',
                 stats.remainingRiskCapacity.toStringAsFixed(2),
               ),
-              _buildStatRow(
-                'Average Win',
-                stats.averageWin.toStringAsFixed(2),
-              ),
+              _buildStatRow('Average Win', stats.averageWin.toStringAsFixed(2)),
               _buildStatRow(
                 'Average Loss',
                 stats.averageLoss.toStringAsFixed(2),
@@ -310,27 +305,62 @@ class _HomeViewState extends State<HomeView> with SignalsMixin {
   Widget _buildResponsiveLayout() {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final isDesktopOrWeb = _isDesktopOrWeb();
-        final isMobile = _isMobile(constraints);
+        final int isDesktopOrWeb = _isDesktopOrWeb();
+        final int isMobile = _isMobile(constraints);
 
-        if (isDesktopOrWeb && !isMobile) {
+        if (isDesktopOrWeb == 1) {
           return _buildDesktopLayout();
-        } else {
+        } else if (isMobile == 0) {
           return _buildMobileLayout();
+        } else {
+          return _buildMobileLayoutLand();
         }
       },
     );
   }
 
-  bool _isDesktopOrWeb() {
-    return kIsWeb ||
-        defaultTargetPlatform == TargetPlatform.windows ||
-        defaultTargetPlatform == TargetPlatform.linux ||
-        defaultTargetPlatform == TargetPlatform.macOS;
+  int _isDesktopOrWeb() {
+    return (kIsWeb ||
+            defaultTargetPlatform == TargetPlatform.windows ||
+            defaultTargetPlatform == TargetPlatform.linux ||
+            defaultTargetPlatform == TargetPlatform.macOS)
+        ? 1
+        : 0;
   }
 
-  bool _isMobile(BoxConstraints constraints) {
-    return constraints.maxWidth < 800;
+  int _isMobile(BoxConstraints constraints) {
+    return (constraints.maxHeight > constraints.maxWidth) ? 0 : 1;
+  }
+
+  Widget _buildMobileLayoutLand() {
+    var size = MediaQuery.of(context).size;
+    return Row(
+      children: [
+        SizedBox(
+          height: size.height,
+          width: size.width * 0.6,
+          child: TradeChartWidget(viewModel: widget.viewModel),
+        ),
+        SizedBox(
+          height: size.height,
+          width: size.width * 0.4,
+          child: Column(
+            children: [
+              Expanded(
+                flex: 2,
+                child: TradeListWidget(viewModel: widget.viewModel),
+              ),
+              RiskControlsWidget(
+                viewModel: widget.viewModel,
+                onMaxDrawdownPressed: () => _showMaxDrawdownDialog(),
+                onLossPerTradePressed: () => _showLossPerTradeDialog(),
+                onAddTradePressed: () => _showAddTradeDialog(),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
   }
 
   Widget _buildMobileLayout() {
