@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "633410372944",
+    "project_id": "risk-management-ritmachinegui",
+    "storage_bucket": "risk-management-ritmachinegui.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:633410372944:android:6114d5b102e27a9102d855",
+        "android_client_info": {
+          "package_name": "com.ritmachinegui.risk_management"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDe154sOst9_poWA-0PaZICGxHwi3-jhuc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

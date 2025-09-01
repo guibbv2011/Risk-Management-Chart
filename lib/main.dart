@@ -10,6 +10,8 @@ import 'view/screens/initialization_screen.dart';
 
 import 'services/simple_persistence_fix.dart';
 import 'utils/initialization_validator.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -41,6 +43,9 @@ class MyApp extends StatelessWidget {
 
   Future<void> _initializeApp() async {
     try {
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
       await AppStorageManager.initialize();
       await SimplePersistenceFix.checkStartupData();
       final hasData = await AppStorageManager.instance.hasStoredData();
@@ -50,28 +55,20 @@ class MyApp extends StatelessWidget {
       final recoveredData = await SimplePersistenceFix.tryRecoverData();
 
       if (!hasData && recoveredData == null) {
-
       } else if (!hasData && recoveredData != null) {
-
         try {
           final restored = await SimplePersistenceFix.restoreData(
             recoveredData,
           );
           if (restored) {
-
-          } else {
-
-          }
+          } else {}
         } catch (e) {
           rethrow;
         }
       } else if (hasData && recoveredData != null) {
-
-      } else {
-      }
+      } else {}
 
       await AppStorageManager.instance.hasStoredData();
-
     } catch (e) {
       if (kIsWeb) {
         throw Exception(
@@ -123,7 +120,6 @@ class _RiskManagementScreenState extends State<RiskManagementScreen> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       try {
-
         final trades = _viewModel.trades.value;
         final hasRiskSettings = await storage.config.hasRiskSettings();
         final tradesCount = await storage.trades.getTradesCount();
@@ -134,11 +130,7 @@ class _RiskManagementScreenState extends State<RiskManagementScreen> {
 
         if (trades.isEmpty && !hasRiskSettings && tradesCount == 0) {
           await _viewModel.attemptDataRecovery();
-
-          // final finalTrades = _viewModel.trades.value;
-          // final finalCount = await storage.trades.getTradesCount();
         }
-
       } catch (e) {
         rethrow;
       }
